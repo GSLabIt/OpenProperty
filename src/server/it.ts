@@ -3,8 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { get, query, run } from "./db";
 import {
-  addDaysIso, addMonthsIso, foiVariation, imuAnnual, imuRateFor, istatNewRent, istatPct, leaseDeadlines, parseCfg, parseFoiText,
-  type Deadline, type FoiIndex, type LeaseFacts,
+  addDaysIso, addMonthsIso, foiVariation, deriveImuUse, imuUnit, IMU_USES, istatNewRent, istatPct, leaseDeadlines, parseCfg, parseFoiText,
+  type Deadline, type ImuUse, type FoiIndex, type LeaseFacts,
 } from "./it-fiscal";
 
 const app = new Hono();
@@ -106,14 +106,14 @@ const UnitIt = z.object({
   cadastral_income: z.number().min(0).nullable().optional(),
   cadastral_ref: z.string().max(200).nullable().optional(),
   ownership_pct: z.number().min(0).max(100).optional(),
-  imu_exempt: z.boolean().optional(),
+  imu_use: z.enum(IMU_USES).nullable().optional(),
 });
 
 app.get("/api/it/unit/:id", async (c) => {
   const id = intParam(c.req.param("id"));
   if (!id) return c.json({ error: "Invalid id" }, 400);
   const row = await get("SELECT * FROM unit_it WHERE unit_id = ?", [id]);
-  return c.json({ unit_it: row ?? { unit_id: id, ownership_pct: 100, imu_exempt: 0 } });
+  return c.json({ unit_it: row ?? { unit_id: id, ownership_pct: 100, imu_use: null } });
 });
 
 app.put("/api/it/unit/:id", async (c) => {
@@ -124,11 +124,11 @@ app.put("/api/it/unit/:id", async (c) => {
   if (!parsed.success) return c.json({ error: parsed.error.issues[0]?.message ?? "Invalid body" }, 400);
   const d = parsed.data;
   await run(
-    `INSERT INTO unit_it (unit_id, cadastral_category, cadastral_income, cadastral_ref, ownership_pct, imu_exempt)
+    `INSERT INTO unit_it (unit_id, cadastral_category, cadastral_income, cadastral_ref, ownership_pct, imu_use)
      VALUES (?, ?, ?, ?, COALESCE(?, 100), ?)
      ON CONFLICT (unit_id) DO UPDATE SET cadastral_category = excluded.cadastral_category, cadastral_income = excluded.cadastral_income,
-       cadastral_ref = excluded.cadastral_ref, ownership_pct = excluded.ownership_pct, imu_exempt = excluded.imu_exempt`,
-    [id, d.cadastral_category ?? null, d.cadastral_income ?? null, d.cadastral_ref ?? null, d.ownership_pct ?? null, d.imu_exempt ? 1 : 0],
+       cadastral_ref = excluded.cadastral_ref, ownership_pct = excluded.ownership_pct, imu_use = excluded.imu_use`,
+    [id, d.cadastral_category ?? null, d.cadastral_income ?? null, d.cadastral_ref ?? null, d.ownership_pct ?? null, d.imu_use ?? null],
   );
   return c.json({ unit_it: await get("SELECT * FROM unit_it WHERE unit_id = ?", [id]) });
 });
@@ -148,24 +148,30 @@ type Facts = LeaseFacts & { istat_last_adjust: string | null };
 async function imuRows(year: number) {
   const cfg = await loadCfg();
   const rows = await query<{
-    unit_id: number; label: string; cadastral_category: string; cadastral_income: number;
-    ownership_pct: number; contract_type: string | null;
+    unit_id: number; label: string; comune: string | null; cadastral_category: string; cadastral_income: number;
+    ownership_pct: number; imu_use: string | null; contract_type: string | null; has_lease: number;
   }>(
-    `SELECT u.id AS unit_id, p.name || ' · ' || u.name AS label, x.cadastral_category, x.cadastral_income, x.ownership_pct,
+    `SELECT u.id AS unit_id, p.name || ' · ' || u.name AS label, p.city AS comune, x.cadastral_category, x.cadastral_income,
+       x.ownership_pct, x.imu_use,
        (SELECT i.contract_type FROM leases l LEFT JOIN lease_it i ON i.lease_id = l.id
-         WHERE l.unit_id = u.id AND l.status = 'active' ORDER BY l.start_date DESC LIMIT 1) AS contract_type
+         WHERE l.unit_id = u.id AND l.status = 'active' ORDER BY l.start_date DESC LIMIT 1) AS contract_type,
+       (SELECT COUNT(*) FROM leases l WHERE l.unit_id = u.id AND l.status = 'active') AS has_lease
      FROM unit_it x JOIN units u ON u.id = x.unit_id JOIN properties p ON p.id = u.property_id
-     WHERE x.imu_exempt = 0 AND x.cadastral_category IS NOT NULL AND x.cadastral_income IS NOT NULL
+     WHERE x.cadastral_category IS NOT NULL AND x.cadastral_income IS NOT NULL
      ORDER BY p.name, u.name`,
   );
+  const half = (n: number) => Math.round(n * 50) / 100;
   const items = rows.map((r) => {
-    const annual = imuAnnual({
-      category: r.cadastral_category, income: r.cadastral_income, ratePermille: imuRateFor(r.cadastral_category, cfg),
-      ownershipPct: r.ownership_pct, concordato: /concordat/i.test(r.contract_type ?? ""),
-    });
-    return { ...r, rate_permille: imuRateFor(r.cadastral_category, cfg), annual, acconto: annual === null ? null : Math.round(annual * 50) / 100, saldo: annual === null ? null : Math.round((annual - Math.round(annual * 50) / 100) * 100) / 100 };
+    // comune = the property's city. Use: explicit, else derived from the active lease.
+    const uso = (r.imu_use as ImuUse | null) ?? deriveImuUse(r.contract_type, r.has_lease > 0);
+    const res = imuUnit({ category: r.cadastral_category, income: r.cadastral_income, uso, comune: r.comune ?? "", ownershipPct: r.ownership_pct, cfg });
+    const annual = res.annual;
+    return {
+      ...r, uso, uso_derived: r.imu_use === null, rate_permille: res.rate, exempt: res.exempt, annual,
+      acconto: annual === null ? null : half(annual), saldo: annual === null ? null : Math.round((annual - half(annual)) * 100) / 100,
+    };
   });
-  return { year, rate_permille: cfg.imuRatePermille, items, total: Math.round(items.reduce((s, i) => s + (i.annual ?? 0), 0) * 100) / 100 };
+  return { year, items, total: Math.round(items.reduce((s, i) => s + (i.annual ?? 0), 0) * 100) / 100 };
 }
 
 app.get("/api/it/imu", async (c) => c.json(await imuRows(intParam(c.req.query("year")) ?? new Date().getFullYear())));

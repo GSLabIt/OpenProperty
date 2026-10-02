@@ -24,3 +24,7 @@ CREATE TABLE IF NOT EXISTS foi_index (
   month TEXT PRIMARY KEY,                          -- 'YYYY-MM'
   value REAL NOT NULL                              -- ISTAT FOI index (no tobacco)
 );
+
+-- IMU use per unit (NULL = derived from the active lease). Replaces the old imu_exempt flag.
+ALTER TABLE unit_it ADD COLUMN IF NOT EXISTS imu_use TEXT;
+UPDATE unit_it SET imu_use = 'abitazione_principale' WHERE imu_exempt = 1 AND imu_use IS NULL;

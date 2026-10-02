@@ -1,7 +1,11 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { t } from "@/i18n";
 import type { UnitIt } from "./fiscal-api";
+
+const AUTO = "__auto__";
+const USES = ["abitazione_principale", "locata_libero", "locata_concordato", "disposizione", "comodato", "commerciale"];
 
 export function UnitFiscalFields({ value, onChange }: { value: UnitIt; onChange: (v: UnitIt) => void }) {
   const set = <K extends keyof UnitIt>(k: K, v: UnitIt[K]) => onChange({ ...value, [k]: v });
@@ -26,10 +30,17 @@ export function UnitFiscalFields({ value, onChange }: { value: UnitIt; onChange:
         <Label htmlFor="u-ref">{t("Cadastral reference")}</Label>
         <Input id="u-ref" value={value.cadastral_ref ?? ""} placeholder={t("Sheet / parcel / sub")} onChange={(e) => set("cadastral_ref", e.target.value || null)} />
       </div>
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={value.imu_exempt} onChange={(e) => set("imu_exempt", e.target.checked)} />
-        {t("Exempt from IMU (e.g. main residence)")}
-      </label>
+      <div>
+        <Label>{t("Use for IMU")}</Label>
+        <Select value={value.imu_use ?? AUTO} onValueChange={(v) => set("imu_use", v === AUTO ? null : v)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={AUTO}>{t("Automatic (from the active lease)")}</SelectItem>
+            {USES.map((u) => <SelectItem key={u} value={u}>{t(u)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <p className="mt-1 text-xs text-muted-foreground">{t("The municipality is the property's city; rates are set in Settings → Fiscal.")}</p>
+      </div>
     </div>
   );
 }

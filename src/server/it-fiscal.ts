@@ -2,13 +2,14 @@
 // Simplifications are marked `ponytail:`; validate against a real contract before trusting amounts.
 
 export type IstatMode = { label: string; pct: number };
+export type ImuRate = { comune: string; uso: string; key: string; permille: number };
 export type Cfg = {
   contractTypes: string[];
   paymentMethods: string[];
   istatModes: IstatMode[];
   foiVariation: number; // % annual FOI variation, updated by hand in settings
   imuRatePermille: number; // default municipal rate, per mille
-  imuRates: { key: string; permille: number }[]; // per category prefix, longest match wins
+  imuRates: ImuRate[]; // most specific match wins (comune > use > category)
   foiUrl: string; // optional CSV source for monthly FOI indices
 };
 
@@ -25,6 +26,17 @@ export const DEFAULT_CFG_RAW: Record<string, string> = {
 export const parseList = (s: string): string[] =>
   s.split("\n").map((x) => x.trim()).filter(Boolean);
 
+const norm = (x: string) => x.toUpperCase().replace(/\s/g, "");
+
+/** 'Category|permille' or 'Comune|Use|Category|permille' ('*' = any). */
+export function parseImuRate(line: string): ImuRate | null {
+  const f = line.split("|").map((x) => x.trim());
+  const [comune, uso, key, pm] = f.length === 2 ? ["*", "*", f[0], f[1]] : f.length === 4 ? f : ["", "", "", ""];
+  const permille = Number(pm);
+  if (!key || !Number.isFinite(permille)) return null;
+  return { comune: norm(comune) || "*", uso: uso || "*", key: norm(key), permille };
+}
+
 export function parseCfg(raw: Record<string, string>): Cfg {
   const g = (k: string) => raw[k] ?? DEFAULT_CFG_RAW[k];
   return {
@@ -36,10 +48,7 @@ export function parseCfg(raw: Record<string, string>): Cfg {
     }),
     foiVariation: Number(g("it_foi_variation")) || 0,
     imuRatePermille: Number(g("it_imu_rate")) || 0,
-    imuRates: parseList(g("it_imu_rates")).map((l) => {
-      const [key, pm] = l.split("|");
-      return { key: key.toUpperCase().replace(/\s/g, ""), permille: Number(pm) };
-    }).filter((r) => r.key && Number.isFinite(r.permille)),
+    imuRates: parseList(g("it_imu_rates")).map(parseImuRate).filter((r): r is ImuRate => r !== null),
     foiUrl: g("it_foi_url").trim(),
   };
 }
@@ -85,11 +94,50 @@ export function imuMultiplier(category: string): number | null {
   return null;
 }
 
-/** Municipal rate for a category: longest matching prefix in the configured list, else the default. */
-export function imuRateFor(category: string, cfg: Pick<Cfg, "imuRates" | "imuRatePermille">): number {
-  const c = category.toUpperCase().replace(/\s/g, "");
-  const hit = cfg.imuRates.filter((r) => c.startsWith(r.key)).sort((a, b) => b.key.length - a.key.length)[0];
-  return hit ? hit.permille : cfg.imuRatePermille;
+export const IMU_USES = ["abitazione_principale", "locata_libero", "locata_concordato", "disposizione", "comodato", "commerciale"] as const;
+export type ImuUse = (typeof IMU_USES)[number];
+
+/** Use when none is set explicitly: derived from the active lease's contract type. */
+export function deriveImuUse(contractType: string | null | undefined, hasActiveLease: boolean): ImuUse {
+  if (!hasActiveLease) return "disposizione";
+  if (/concordat/i.test(contractType ?? "")) return "locata_concordato";
+  if (/commercial/i.test(contractType ?? "")) return "commerciale";
+  return "locata_libero";
+}
+
+/** Rate for (comune, use, category): the most specific configured row wins, else the default. */
+export function imuRateFor(o: { comune?: string; uso?: string; category: string }, cfg: Pick<Cfg, "imuRates" | "imuRatePermille">): number {
+  const com = norm(o.comune ?? "");
+  const cat = norm(o.category);
+  let best: { score: number; permille: number } | null = null;
+  for (const r of cfg.imuRates) {
+    if (r.comune !== "*" && r.comune !== com) continue;
+    if (r.uso !== "*" && r.uso !== o.uso) continue;
+    if (r.key !== "*" && !cat.startsWith(r.key)) continue;
+    const score = (r.comune !== "*" ? 4 : 0) + (r.uso !== "*" ? 2 : 0) + (r.key !== "*" ? 1 + r.key.length / 100 : 0);
+    if (!best || score > best.score) best = { score, permille: r.permille };
+  }
+  return best ? best.permille : cfg.imuRatePermille;
+}
+
+const LUXURY = ["A/1", "A/8", "A/9"];
+const ABITAZIONE_PRINCIPALE_DEFAULT_PERMILLE = 5; // ponytail: statutory base rate; override with a configured row
+
+/** Annual IMU for one unit. Main residence is exempt except A/1, A/8, A/9 (rate + 200 EUR deduction). */
+export function imuUnit(o: {
+  category: string; income: number; uso: ImuUse; comune?: string; ownershipPct?: number;
+  cfg: Pick<Cfg, "imuRates" | "imuRatePermille">;
+}): { annual: number | null; rate: number; exempt: boolean } {
+  const m = imuMultiplier(o.category);
+  const pct = (o.ownershipPct ?? 100) / 100;
+  if (o.uso === "abitazione_principale" && !LUXURY.includes(norm(o.category))) return { annual: 0, rate: 0, exempt: true };
+  let rate = imuRateFor({ comune: o.comune, uso: o.uso, category: o.category }, o.cfg);
+  if (o.uso === "abitazione_principale" && !o.cfg.imuRates.some((r) => r.uso === "abitazione_principale")) rate = ABITAZIONE_PRINCIPALE_DEFAULT_PERMILLE;
+  if (m === null) return { annual: null, rate, exempt: false };
+  let tax = o.income * 1.05 * m * (rate / 1000) * pct;
+  if (o.uso === "abitazione_principale") tax = Math.max(0, tax - 200 * pct);
+  if (o.uso === "locata_concordato") tax *= 0.75; // 25% reduction for canone concordato
+  return { annual: Math.round(tax * 100) / 100, rate, exempt: false };
 }
 
 /** FOI index series: month 'YYYY-MM' -> value. */
@@ -111,19 +159,6 @@ export function foiVariation(index: FoiIndex, anniversary: string): number | nul
   const prev = addMonthsIso(`${cur}-01`, -12).slice(0, 7);
   if (!index[cur] || !index[prev]) return null;
   return Math.round((index[cur] / index[prev] - 1) * 10000) / 100;
-}
-
-/** Annual IMU for one unit. `concordato` = 25% reduction (canone concordato, 3+2). */
-export function imuAnnual(o: {
-  category: string; income: number; ratePermille: number; ownershipPct?: number; concordato?: boolean;
-}): number | null {
-  const m = imuMultiplier(o.category);
-  if (m === null) return null;
-  const base = o.income * 1.05 * m;
-  let tax = (base * o.ratePermille) / 1000;
-  tax *= (o.ownershipPct ?? 100) / 100;
-  if (o.concordato) tax *= 0.75;
-  return Math.round(tax * 100) / 100;
 }
 
 /** Imposta di registro: 2% of the annual rent, minimum 67 EUR. ponytail: bollo not included. */

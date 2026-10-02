@@ -11,7 +11,7 @@ import { t } from "@/i18n";
 
 interface Deadline { date: string; kind: string; lease_id: number | null; label: string; amount?: number }
 interface IstatItem { lease_id: number; label: string; due: string; monthly_rent: number; pct: number; foi: number; foi_source: string; delta: number; new_rent: number }
-interface ImuItem { unit_id: number; label: string; cadastral_category: string; cadastral_income: number; contract_type: string | null; rate_permille: number; annual: number | null; acconto: number | null; saldo: number | null }
+interface ImuItem { unit_id: number; label: string; comune: string | null; uso: string; uso_derived: boolean; exempt: boolean; cadastral_category: string; cadastral_income: number; rate_permille: number; annual: number | null; acconto: number | null; saldo: number | null }
 
 const KIND: Record<string, string> = {
   registration: "Contract registration",
@@ -131,19 +131,19 @@ function IstatTab() {
 
 function ImuTab() {
   const { settings } = useApp();
-  const { data } = useLoad<{ year: number; rate_permille: number; total: number; items: ImuItem[] }>("/api/it/imu");
+  const { data } = useLoad<{ year: number; total: number; items: ImuItem[] }>("/api/it/imu");
   if (!data) return <Card className="p-8 text-center text-sm text-muted-foreground">{t("Loading…")}</Card>;
   if (data.items.length === 0) return <Card className="p-8 text-center text-sm text-muted-foreground">{t("No units with cadastral data. Add category and income in a unit.")}</Card>;
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {t("IMU {year} at {rate}‰ (rate set in Settings → Fiscal). Canone concordato: 25% reduction.", { year: data.year, rate: data.rate_permille })}
+        {t("IMU {year}. Rates by municipality (the property city), use and category from Settings → Fiscal; canone concordato: 25% reduction.", { year: data.year })}
       </p>
       <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("Unit")}</TableHead><TableHead>{t("Category")}</TableHead>
+              <TableHead>{t("Unit")}</TableHead><TableHead>{t("Municipality")}</TableHead><TableHead>{t("Use")}</TableHead><TableHead>{t("Category")}</TableHead>
               <TableHead className="text-right">{t("Cadastral income")}</TableHead>
               <TableHead className="text-right">{t("Rate")}</TableHead>
               <TableHead className="text-right">{t("Advance (16 Jun)")}</TableHead>
@@ -155,16 +155,18 @@ function ImuTab() {
             {data.items.map((i) => (
               <TableRow key={i.unit_id}>
                 <TableCell>{i.label}</TableCell>
+                <TableCell>{i.comune ?? "—"}</TableCell>
+                <TableCell>{t(i.uso)}{i.uso_derived ? " *" : ""}</TableCell>
                 <TableCell>{i.cadastral_category}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatMoney(i.cadastral_income, settings.currency)}</TableCell>
-                <TableCell className="text-right tabular-nums">{i.rate_permille}‰</TableCell>
+                <TableCell className="text-right tabular-nums">{i.exempt ? "—" : `${i.rate_permille}‰`}</TableCell>
                 <TableCell className="text-right tabular-nums">{i.acconto != null ? formatMoney(i.acconto, settings.currency) : "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{i.saldo != null ? formatMoney(i.saldo, settings.currency) : "—"}</TableCell>
-                <TableCell className="text-right tabular-nums font-medium">{i.annual != null ? formatMoney(i.annual, settings.currency) : t("Unknown category")}</TableCell>
+                <TableCell className="text-right tabular-nums font-medium">{i.exempt ? t("Exempt") : i.annual != null ? formatMoney(i.annual, settings.currency) : t("Unknown category")}</TableCell>
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={6} className="text-right font-medium">{t("Total")}</TableCell>
+              <TableCell colSpan={8} className="text-right font-medium">{t("Total")}</TableCell>
               <TableCell className="text-right tabular-nums font-semibold">{formatMoney(data.total, settings.currency)}</TableCell>
             </TableRow>
           </TableBody>

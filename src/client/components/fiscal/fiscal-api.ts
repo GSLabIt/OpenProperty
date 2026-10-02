@@ -25,7 +25,7 @@ export interface UnitIt {
   cadastral_income: number | null;
   cadastral_ref: string | null;
   ownership_pct: number;
-  imu_exempt: boolean;
+  imu_use: string | null; // null = derived from the active lease
 }
 
 export const EMPTY_LEASE_IT: LeaseIt = {
@@ -33,7 +33,7 @@ export const EMPTY_LEASE_IT: LeaseIt = {
   registration_date: null, registration_number: null, istat_mode: null, istat_last_adjust: null,
 };
 export const EMPTY_UNIT_IT: UnitIt = {
-  cadastral_category: null, cadastral_income: null, cadastral_ref: null, ownership_pct: 100, imu_exempt: false,
+  cadastral_category: null, cadastral_income: null, cadastral_ref: null, ownership_pct: 100, imu_use: null,
 };
 
 export function useItConfig(active = true): ItConfig | null {
@@ -66,8 +66,8 @@ export function useUnitFiscal(open: boolean, unitId?: number) {
     if (!open) return;
     setValue(EMPTY_UNIT_IT);
     if (!unitId) return;
-    api<{ unit_it: UnitIt & { imu_exempt: number | boolean } }>("GET", `/api/it/unit/${unitId}`)
-      .then((r) => setValue({ ...EMPTY_UNIT_IT, ...r.unit_it, imu_exempt: !!r.unit_it.imu_exempt }))
+    api<{ unit_it: UnitIt }>("GET", `/api/it/unit/${unitId}`)
+      .then((r) => setValue({ ...EMPTY_UNIT_IT, ...r.unit_it }))
       .catch(() => undefined);
   }, [open, unitId]);
   const save = (id: number) => api("PUT", `/api/it/unit/${id}`, value);

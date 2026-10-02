@@ -83,7 +83,7 @@ export function FiscalSettingsTab() {
           <p className="mt-1 text-xs text-muted-foreground">{t("Your municipality's rate for rented homes, per mille.")}</p>
         </div>
       </div>
-      {area("it_imu_rates", t("IMU rates by category"), t("One per line as Category|permille, e.g. C/1|7.6 or A|10.6. The longest matching prefix wins; otherwise the default rate above."))}
+      {area("it_imu_rates", t("IMU rates"), t("One per line as Municipality|Use|Category|permille, e.g. Bologna|locata_concordato|A|8.6; use * for any. Short form Category|permille also works. The most specific row wins; otherwise the default rate above. Uses: abitazione_principale, locata_libero, locata_concordato, disposizione, comodato, commerciale."))}
       <div>
         <Label htmlFor="it_foi_url">{t("FOI source URL (CSV, https)")}</Label>
         <Input id="it_foi_url" value={v.it_foi_url} placeholder="https://…" onChange={(e) => setV({ ...v, it_foi_url: e.target.value })} />
