@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Unit, UnitStatus } from "@/types";
+import { t } from "@/i18n";
 
 interface Props {
   open: boolean;
@@ -18,10 +19,10 @@ interface Props {
 }
 
 const STATUSES: { value: UnitStatus; label: string }[] = [
-  { value: "vacant", label: "Vacant" },
-  { value: "occupied", label: "Occupied" },
-  { value: "turnover", label: "Turnover" },
-  { value: "unavailable", label: "Unavailable" },
+  { value: "vacant", label: t("Vacant") },
+  { value: "occupied", label: t("Occupied") },
+  { value: "turnover", label: t("Turnover") },
+  { value: "unavailable", label: t("Unavailable") },
 ];
 
 export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Props) {
@@ -91,56 +92,56 @@ export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Pr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{unit ? "Edit unit" : "New unit"}</DialogTitle>
+          <DialogTitle>{unit ? t("Edit unit") : t("New unit")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div>
-            <Label htmlFor="unit-name">Name</Label>
-            <Input id="unit-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Unit 1A" />
+            <Label htmlFor="unit-name">{t("Name")}</Label>
+            <Input id="unit-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("e.g. Apartment 3A")} />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label htmlFor="unit-beds">Bedrooms</Label>
+              <Label htmlFor="unit-beds">{t("Bedrooms")}</Label>
               <Input id="unit-beds" type="number" step="0.5" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="unit-baths">Bathrooms</Label>
+              <Label htmlFor="unit-baths">{t("Bathrooms")}</Label>
               <Input id="unit-baths" type="number" step="0.5" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="unit-sqft">Sq ft</Label>
+              <Label htmlFor="unit-sqft">{t("Area (sqm)")}</Label>
               <Input id="unit-sqft" type="number" value={sqft} onChange={(e) => setSqft(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="unit-rent">Market rent</Label>
+              <Label htmlFor="unit-rent">{t("Market rent")}</Label>
               <Input id="unit-rent" type="number" value={marketRent} onChange={(e) => setMarketRent(e.target.value)} />
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>{t("Status")}</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as UnitStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {STATUSES.map((st) => <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label htmlFor="unit-notes">Notes</Label>
+            <Label htmlFor="unit-notes">{t("Notes")}</Label>
             <Textarea id="unit-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter className="mt-2">
           {unit && (
             <Button type="button" variant="destructive" className="sm:mr-auto" onClick={() => setConfirming(true)}>
-              Delete
+              {t("Delete")}
             </Button>
           )}
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t("Cancel")}</Button>
           <Button type="button" onClick={save} disabled={saving || !name.trim()}>
-            {unit ? "Save changes" : "Create unit"}
+            {unit ? t("Save changes") : t("Create unit")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -150,8 +151,8 @@ export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Pr
         <ConfirmDelete
           open={confirming}
           onOpenChange={setConfirming}
-          title={`Delete unit "${unit.name}"?`}
-          description="Its leases and rent history go with it. This cannot be undone."
+          title={t('Delete unit "{name}"?', { name: unit.name })}
+          description={t("Its leases and rent history go with it. This cannot be undone.")}
           onConfirm={remove}
         />
       ) : null}

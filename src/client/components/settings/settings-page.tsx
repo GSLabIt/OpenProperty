@@ -20,31 +20,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vendor, VendorCategory } from "@/types";
 import { PageShell } from "@/components/page-shell";
+import { t } from "@/i18n";
 
 const COLORS = ["sky", "emerald", "amber", "rose", "violet", "fuchsia", "teal", "orange", "slate"];
 
 const VENDOR_CATEGORIES: { value: VendorCategory; label: string }[] = [
-  { value: "plumber", label: "Plumber" },
-  { value: "electrician", label: "Electrician" },
-  { value: "hvac", label: "HVAC" },
-  { value: "handyman", label: "Handyman" },
-  { value: "cleaning", label: "Cleaning" },
-  { value: "landscaping", label: "Landscaping" },
-  { value: "general", label: "General" },
+  { value: "plumber", label: t("Plumber") },
+  { value: "electrician", label: t("Electrician") },
+  { value: "hvac", label: t("HVAC") },
+  { value: "handyman", label: t("Handyman") },
+  { value: "cleaning", label: t("Cleaning") },
+  { value: "landscaping", label: t("Landscaping") },
+  { value: "general", label: t("General") },
 ];
 
 export function SettingsPage() {
   return (
     <PageShell
-      title="Settings"
-      meta="Vendors and rent policy defaults"
+      title={t("Settings")}
+      meta={t("Vendors and rent policy defaults")}
       width="max-w-5xl"
     >
 
         <Tabs defaultValue="vendors">
           <TabsList>
-            <TabsTrigger value="vendors">Vendors</TabsTrigger>
-            <TabsTrigger value="policy">Rent policy</TabsTrigger>
+            <TabsTrigger value="vendors">{t("Vendors")}</TabsTrigger>
+            <TabsTrigger value="policy">{t("Rent policy")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="vendors" className="mt-4">
@@ -69,15 +70,15 @@ function VendorsTab() {
     <Card>
       <div className="flex items-center justify-between border-b p-4">
         <div>
-          <h2 className="text-sm font-semibold">Vendors</h2>
-          <p className="text-xs text-muted-foreground">Plumbers, electricians, handymen, and other service providers.</p>
+          <h2 className="text-sm font-semibold">{t("Vendors")}</h2>
+          <p className="text-xs text-muted-foreground">{t("Plumbers, electricians, handymen, and other service providers.")}</p>
         </div>
         <Button size="sm" onClick={() => { setEditing(undefined); setOpen(true); }}>
-          <Plus className="mr-1 h-4 w-4" /> Add vendor
+          <Plus className="mr-1 h-4 w-4" /> {t("Add vendor")}
         </Button>
       </div>
       {app.vendors.length === 0 ? (
-        <div className="p-8 text-center text-sm text-muted-foreground">No vendors yet.</div>
+        <div className="p-8 text-center text-sm text-muted-foreground">{t("No vendors yet.")}</div>
       ) : (
         <ul className="divide-y">
           {app.vendors.map((v) => {
@@ -94,7 +95,7 @@ function VendorsTab() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="neutral" className="capitalize">{v.category}</Badge>
+                  <Badge variant="neutral" className="capitalize">{t(v.category)}</Badge>
                   <Button size="icon" variant="ghost" onClick={() => { setEditing(v); setOpen(true); }}>
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -173,25 +174,25 @@ function VendorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{vendor ? "Edit vendor" : "New vendor"}</DialogTitle>
+          <DialogTitle>{vendor ? t("Edit vendor") : t("New vendor")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div>
-            <Label htmlFor="v-name">Name</Label>
+            <Label htmlFor="v-name">{t("Name")}</Label>
             <Input id="v-name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Category</Label>
+              <Label>{t("Category")}</Label>
               <Select value={category} onValueChange={(v) => setCategory(v as VendorCategory)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {VENDOR_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  {VENDOR_CATEGORIES.map((vc) => <SelectItem key={vc.value} value={vc.value}>{vc.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Color</Label>
+              <Label>{t("Color")}</Label>
               <Select value={color} onValueChange={setColor}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -199,7 +200,7 @@ function VendorDialog({
                     <SelectItem key={c} value={c}>
                       <span className="flex items-center gap-2">
                         <span className={`h-3 w-3 rounded-full bg-${c}-500`} />
-                        <span className="capitalize">{c}</span>
+                        <span className="capitalize">{t(c)}</span>
                       </span>
                     </SelectItem>
                   ))}
@@ -209,28 +210,28 @@ function VendorDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="v-phone">Phone</Label>
+              <Label htmlFor="v-phone">{t("Phone")}</Label>
               <Input id="v-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="v-email">Email</Label>
+              <Label htmlFor="v-email">{t("Email")}</Label>
               <Input id="v-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           </div>
           <div>
-            <Label htmlFor="v-notes">Notes</Label>
+            <Label htmlFor="v-notes">{t("Notes")}</Label>
             <Textarea id="v-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter>
           {vendor && (
             <Button type="button" variant="destructive" className="sm:mr-auto" onClick={() => setConfirming(true)}>
-              <Trash2 className="mr-1 h-4 w-4" /> Delete
+              <Trash2 className="mr-1 h-4 w-4" /> {t("Delete")}
             </Button>
           )}
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t("Cancel")}</Button>
           <Button type="button" onClick={save} disabled={saving || !name.trim()}>
-            {vendor ? "Save changes" : "Create"}
+            {vendor ? t("Save changes") : t("Create")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -240,8 +241,8 @@ function VendorDialog({
         <ConfirmDelete
           open={confirming}
           onOpenChange={setConfirming}
-          title={`Delete ${vendor.name}?`}
-          description="Work orders already assigned to them keep the name on record."
+          title={t("Delete {name}?", { name: vendor.name })}
+          description={t("Work orders already assigned to them keep the name on record.")}
           onConfirm={remove}
         />
       ) : null}
@@ -273,7 +274,7 @@ function PolicyTab() {
         default_rent_due_day: Math.min(31, Math.max(1, parseInt(dueDay, 10) || 1)),
         late_fee_amount: parseFloat(lateFee) || 0,
         late_fee_grace_days: Math.max(0, parseInt(grace, 10) || 0),
-        currency: currency.trim().toUpperCase() || "USD",
+        currency: currency.trim().toUpperCase() || "EUR",
       });
     } catch (err) {
       app.setError((err as Error).message);
@@ -284,30 +285,30 @@ function PolicyTab() {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-1 text-sm font-semibold">Rent policy defaults</h2>
+      <h2 className="mb-1 text-sm font-semibold">{t("Rent policy defaults")}</h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        Used when creating new leases. Each lease can override these.
+        {t("Used when creating new leases. Each lease can override these.")}
       </p>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <div>
-          <Label htmlFor="s-day">Rent due day</Label>
+          <Label htmlFor="s-day">{t("Rent due day")}</Label>
           <Input id="s-day" type="number" min={1} max={31} value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="s-late">Late fee</Label>
+          <Label htmlFor="s-late">{t("Late fee")}</Label>
           <Input id="s-late" type="number" value={lateFee} onChange={(e) => setLateFee(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="s-grace">Grace days</Label>
+          <Label htmlFor="s-grace">{t("Grace days")}</Label>
           <Input id="s-grace" type="number" min={0} value={grace} onChange={(e) => setGrace(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="s-cur">Currency</Label>
-          <Input id="s-cur" value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="USD" />
+          <Label htmlFor="s-cur">{t("Currency")}</Label>
+          <Input id="s-cur" value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="EUR" />
         </div>
       </div>
       <div className="mt-4">
-        <Button onClick={save} disabled={saving}>Save settings</Button>
+        <Button onClick={save} disabled={saving}>{t("Save settings")}</Button>
       </div>
     </Card>
   );

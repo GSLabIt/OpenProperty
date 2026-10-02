@@ -1,3 +1,4 @@
+import { locale } from "../i18n";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -33,13 +34,13 @@ export function formatDate(iso: string | null | undefined, opts?: Intl.DateTimeF
   if (!iso) return "";
   const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, opts ?? { year: "numeric", month: "short", day: "numeric" });
+  return d.toLocaleDateString(locale, opts ?? { year: "numeric", month: "short", day: "numeric" });
 }
 
-/** Format a number as currency. Uses USD by default. */
+/** Format a number as currency. Uses USD by default (the app passes the configured currency). */
 export function formatMoney(n: number | null | undefined, currency = "USD"): string {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
-  return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(n);
 }
 
 /** YYYY-MM-DD for a given Date in local time. */
@@ -66,7 +67,7 @@ export function addMonths(period: string, delta: number): string {
 export function formatPeriod(period: string): string {
   const [y, m] = period.split("-").map(Number);
   const d = new Date(y, m - 1, 1);
-  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  return d.toLocaleDateString(locale, { month: "long", year: "numeric" });
 }
 
 /** Days between two ISO dates (positive = b after a). */

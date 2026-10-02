@@ -7,13 +7,14 @@ import { Card } from "@/components/ui/card";
 import { PropertyDialog } from "./property-dialog";
 import type { Property } from "@/types";
 import { PageShell } from "@/components/page-shell";
+import { t } from "@/i18n";
 
 const TYPE_LABEL: Record<string, string> = {
-  single_family: "Single-family",
-  multi_family: "Multi-family",
-  condo: "Condo",
-  townhouse: "Townhouse",
-  commercial: "Commercial",
+  single_family: t("Single-family"),
+  multi_family: t("Multi-family"),
+  condo: t("Condo"),
+  townhouse: t("Townhouse"),
+  commercial: t("Commercial"),
 };
 
 export function PropertiesList({ navigate }: { navigate: (to: string) => void }) {
@@ -26,13 +27,13 @@ export function PropertiesList({ navigate }: { navigate: (to: string) => void })
 
   return (
     <PageShell
-      title="Properties"
-      meta={`${properties.length} ${properties.length === 1 ? "property" : "properties"} · ${totalUnits} ${totalUnits === 1 ? "unit" : "units"} · ${occupied}/${totalUnits || 0} occupied`}
+      title={t("Properties")}
+      meta={t("{properties} · {units} · {occupied}/{total} occupied", { properties: t(properties.length === 1 ? "{n} property" : "{n} properties", { n: properties.length }), units: t(totalUnits === 1 ? "{n} unit" : "{n} units", { n: totalUnits }), occupied, total: totalUnits || 0 })}
       actions={
         properties.length > 0 ? (
           <Button onClick={() => { setEditing(undefined); setDialogOpen(true); }}>
             <Plus className="h-4 w-4" />
-            New property
+            {t("New property")}
           </Button>
         ) : null
       }
@@ -40,12 +41,12 @@ export function PropertiesList({ navigate }: { navigate: (to: string) => void })
       {properties.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
             <Building2 className="size-8 text-faint" aria-hidden />
-            <p className="font-medium">No properties yet</p>
+            <p className="font-medium">{t("No properties yet")}</p>
             <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Add your first property to start managing units, leases, and rent.
+              {t("Add your first property to start managing units, leases, and rent.")}
             </p>
             <Button className="mt-2" onClick={() => { setEditing(undefined); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4" /> New property
+              <Plus className="h-4 w-4" /> {t("New property")}
             </Button>
           </div>
         ) : (
@@ -79,9 +80,9 @@ export function PropertiesList({ navigate }: { navigate: (to: string) => void })
                     </p>
                   )}
                   <div className="mt-4 grid grid-cols-3 gap-3 border-t pt-4 text-sm">
-                    <Stat label="Units" value={p.unit_count ?? 0} />
-                    <Stat label="Occupied" value={`${p.occupied_count ?? 0}/${p.unit_count ?? 0}`} />
-                    <Stat label="Occupancy" value={`${occRate}%`} />
+                    <Stat label={t("Units")} value={p.unit_count ?? 0} />
+                    <Stat label={t("Occupied")} value={`${p.occupied_count ?? 0}/${p.unit_count ?? 0}`} />
+                    <Stat label={t("Occupancy")} value={`${occRate}%`} />
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <button
@@ -89,10 +90,10 @@ export function PropertiesList({ navigate }: { navigate: (to: string) => void })
                       onClick={(e) => { e.stopPropagation(); setEditing(p); setDialogOpen(true); }}
                       className="text-xs text-muted-foreground hover:text-foreground"
                     >
-                      Edit
+                      {t("Edit")}
                     </button>
                     {p.year_built && (
-                      <span className="text-xs text-muted-foreground">Built {p.year_built}</span>
+                      <span className="text-xs text-muted-foreground">{t("Built {year}", { year: p.year_built })}</span>
                     )}
                   </div>
                 </Card>

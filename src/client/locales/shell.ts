@@ -1,0 +1,15 @@
+export const shell: Record<string, string> = {
+  Dashboard: "Cruscotto",
+  Properties: "Immobili",
+  Tenants: "Inquilini",
+  Leases: "Contratti",
+  Rent: "Canoni",
+  Maintenance: "Manutenzioni",
+  Settings: "Impostazioni",
+  Operations: "Gestione",
+  Admin: "Amministrazione",
+  "Loading…": "Caricamento…",
+  "Not found": "Non trovato",
+  "That page doesn't exist.": "Questa pagina non esiste.",
+  Dismiss: "Chiudi",
+};

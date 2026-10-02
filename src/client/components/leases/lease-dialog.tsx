@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Lease, LeaseStatus, Tenant, Unit } from "@/types";
+import { t } from "@/i18n";
 
 interface Props {
   open: boolean;
@@ -20,10 +21,10 @@ interface Props {
 }
 
 const STATUSES: { value: LeaseStatus; label: string }[] = [
-  { value: "upcoming", label: "Upcoming" },
-  { value: "active", label: "Active" },
-  { value: "ended", label: "Ended" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "upcoming", label: t("Upcoming") },
+  { value: "active", label: t("Active") },
+  { value: "ended", label: t("Ended") },
+  { value: "cancelled", label: t("Cancelled") },
 ];
 
 export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Props) {
@@ -48,9 +49,9 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
     if (!open) return;
     (async () => {
       try {
-        const [u, t] = await Promise.all([app.listUnits(), app.listTenants()]);
-        setUnits(u);
-        setTenants(t);
+        const [us, ts] = await Promise.all([app.listUnits(), app.listTenants()]);
+        setUnits(us);
+        setTenants(ts);
       } catch (err) {
         app.setError((err as Error).message);
       }
@@ -150,14 +151,14 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{lease ? "Edit lease" : "New lease"}</DialogTitle>
+          <DialogTitle>{lease ? t("Edit lease") : t("New lease")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Unit</Label>
+              <Label>{t("Unit")}</Label>
               <Select value={String(unitId || "")} onValueChange={(v) => setUnitId(v ? Number(v) : "")}>
-                <SelectTrigger><SelectValue placeholder="Pick a unit" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("Pick a unit")} /></SelectTrigger>
                 <SelectContent>
                   {units.map((u) => (
                     <SelectItem key={u.id} value={String(u.id)}>
@@ -168,13 +169,13 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
               </Select>
             </div>
             <div>
-              <Label>Primary tenant</Label>
+              <Label>{t("Primary tenant")}</Label>
               <Select value={String(tenantId || "")} onValueChange={(v) => setTenantId(v ? Number(v) : "")}>
-                <SelectTrigger><SelectValue placeholder="Pick a tenant" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("Pick a tenant")} /></SelectTrigger>
                 <SelectContent>
-                  {tenants.map((t) => (
-                    <SelectItem key={t.id} value={String(t.id)}>
-                      {t.first_name} {t.last_name}
+                  {tenants.map((tn) => (
+                    <SelectItem key={tn.id} value={String(tn.id)}>
+                      {tn.first_name} {tn.last_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -183,57 +184,57 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="l-start">Start</Label>
+              <Label htmlFor="l-start">{t("Start")}</Label>
               <Input id="l-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="l-end">End</Label>
+              <Label htmlFor="l-end">{t("End")}</Label>
               <Input id="l-end" type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="l-rent">Monthly rent</Label>
+              <Label htmlFor="l-rent">{t("Monthly rent")}</Label>
               <Input id="l-rent" type="number" value={rent} onChange={(e) => setRent(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="l-dep">Security deposit</Label>
+              <Label htmlFor="l-dep">{t("Security deposit")}</Label>
               <Input id="l-dep" type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label htmlFor="l-day">Rent due day</Label>
+              <Label htmlFor="l-day">{t("Rent due day")}</Label>
               <Input id="l-day" type="number" min={1} max={31} value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="l-late">Late fee</Label>
+              <Label htmlFor="l-late">{t("Late fee")}</Label>
               <Input id="l-late" type="number" value={lateFee} onChange={(e) => setLateFee(e.target.value)} />
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>{t("Status")}</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as LeaseStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {STATUSES.map((st) => <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label htmlFor="l-notes">Notes</Label>
+            <Label htmlFor="l-notes">{t("Notes")}</Label>
             <Textarea id="l-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter className="mt-2">
           {lease && (
             <Button type="button" variant="destructive" className="sm:mr-auto" onClick={() => setConfirming(true)}>
-              Delete
+              {t("Delete")}
             </Button>
           )}
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t("Cancel")}</Button>
           <Button type="button" onClick={save} disabled={saving || !unitId || !start || !end}>
-            {lease ? "Save changes" : "Create lease"}
+            {lease ? t("Save changes") : t("Create lease")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -242,8 +243,8 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
       <ConfirmDelete
         open={confirming}
         onOpenChange={setConfirming}
-        title="Delete this lease?"
-        description="The rent charges and payments tied to it go with it. This cannot be undone."
+        title={t("Delete this lease?")}
+        description={t("The rent charges and payments tied to it go with it. This cannot be undone.")}
         onConfirm={remove}
       />
     </>

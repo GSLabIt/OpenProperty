@@ -3,6 +3,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { t } from "@/i18n";
 
 /**
  * The confirm surface for destructive actions.
@@ -120,7 +121,7 @@ export function ConfirmDelete({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Delete",
+  confirmLabel = t("Delete"),
   onConfirm,
 }: {
   open: boolean;
@@ -140,7 +141,7 @@ export function ConfirmDelete({
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

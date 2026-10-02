@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { t } from "./i18n";
 import { AppNav, reportLocation, type AppNavItem } from "@clawnify/app/client";
 import { useAppState } from "./hooks/use-app-state";
 import { useRouter, type Route } from "./hooks/use-router";
@@ -28,17 +29,17 @@ import { SettingsPage } from "./components/settings/settings-page";
 const PORTFOLIO: AppNavItem[] = [
   // Not drawn as a row: the app's name opens it (the brand row standalone, the
   // app's own header in the dashboard).
-  { id: "dashboard", label: "Dashboard", href: "/dashboard", home: true },
-  { id: "properties", label: "Properties", href: "/properties", icon: "building-2", color: "green" },
-  { id: "tenants", label: "Tenants", href: "/tenants", icon: "users", color: "blue" },
-  { id: "leases", label: "Leases", href: "/leases", icon: "clipboard-list", color: "violet" },
+  { id: "dashboard", label: t("Dashboard"), href: "/dashboard", home: true },
+  { id: "properties", label: t("Properties"), href: "/properties", icon: "building-2", color: "green" },
+  { id: "tenants", label: t("Tenants"), href: "/tenants", icon: "users", color: "blue" },
+  { id: "leases", label: t("Leases"), href: "/leases", icon: "clipboard-list", color: "violet" },
 ];
 const OPERATIONS: AppNavItem[] = [
-  { id: "rent", label: "Rent", href: "/rent", icon: "dollar-sign", color: "amber" },
-  { id: "maintenance", label: "Maintenance", href: "/maintenance", icon: "list-checks", color: "orange" },
+  { id: "rent", label: t("Rent"), href: "/rent", icon: "dollar-sign", color: "amber" },
+  { id: "maintenance", label: t("Maintenance"), href: "/maintenance", icon: "list-checks", color: "orange" },
 ];
 const ADMIN: AppNavItem[] = [
-  { id: "settings", label: "Settings", href: "/settings", icon: "settings" },
+  { id: "settings", label: t("Settings"), href: "/settings", icon: "settings" },
 ];
 
 /** A record page keeps its collection's row lit. */
@@ -59,8 +60,8 @@ export function App() {
 
   const groups = [
     { items: PORTFOLIO },
-    { label: "Operations", items: OPERATIONS },
-    { label: "Admin", items: ADMIN },
+    { label: t("Operations"), items: OPERATIONS },
+    { label: t("Admin"), items: ADMIN },
   ];
 
   return (
@@ -81,7 +82,7 @@ export function App() {
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {state.loading ? (
             <div className="flex flex-1 items-center justify-center text-muted-foreground">
-              Loading…
+              {t("Loading…")}
             </div>
           ) : (
             <>
@@ -95,7 +96,7 @@ export function App() {
               {route.name === "maintenance" && <MaintenancePage />}
               {route.name === "settings" && <SettingsPage />}
               {route.name === "not-found" && (
-                <Placeholder title="Not found" message="That page doesn't exist." />
+                <Placeholder title={t("Not found")} message={t("That page doesn't exist.")} />
               )}
             </>
           )}

@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { TenantDialog } from "./tenant-dialog";
 import type { Lease, Tenant } from "@/types";
 import { PageShell } from "@/components/page-shell";
+import { t } from "@/i18n";
 
 export function TenantPage({ id, navigate }: { id: number; navigate: (to: string) => void }) {
   const app = useApp();
@@ -20,11 +21,11 @@ export function TenantPage({ id, navigate }: { id: number; navigate: (to: string
   async function load() {
     try {
       setLoading(true);
-      const [{ tenant: t }, ll] = await Promise.all([
+      const [{ tenant: tt }, ll] = await Promise.all([
         api<{ tenant: Tenant }>("GET", `/api/tenants/${id}`),
         app.listLeases({ tenant_id: id }),
       ]);
-      setTenant(t);
+      setTenant(tt);
       setLeases(ll);
     } catch (err) {
       app.setError((err as Error).message);
@@ -39,13 +40,13 @@ export function TenantPage({ id, navigate }: { id: number; navigate: (to: string
   }, [id]);
 
   if (loading) {
-    return <div className="flex flex-1 items-center justify-center text-muted-foreground">Loading tenant…</div>;
+    return <div className="flex flex-1 items-center justify-center text-muted-foreground">{t("Loading tenant…")}</div>;
   }
   if (!tenant) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2">
-        <p className="text-sm text-muted-foreground">Tenant not found.</p>
-        <Button variant="outline" onClick={() => navigate("/tenants")}>Back to tenants</Button>
+        <p className="text-sm text-muted-foreground">{t("Tenant not found.")}</p>
+        <Button variant="outline" onClick={() => navigate("/tenants")}>{t("Back to tenants")}</Button>
       </div>
     );
   }
@@ -61,7 +62,7 @@ export function TenantPage({ id, navigate }: { id: number; navigate: (to: string
           className="inline-flex items-center gap-1.5 text-[1.375rem] font-semibold leading-tight tracking-[-0.01em] transition-colors duration-150 hover:text-muted-foreground"
         >
           <ArrowLeft className="size-4 text-muted-foreground" aria-hidden />
-          Tenants
+          {t("Tenants")}
         </button>
       }
       width="max-w-5xl"
@@ -80,46 +81,46 @@ export function TenantPage({ id, navigate }: { id: number; navigate: (to: string
             </div>
           </div>
           <Button variant="outline" onClick={() => setEditing(true)}>
-            <Pencil className="mr-1 h-4 w-4" /> Edit
+            <Pencil className="mr-1 h-4 w-4" /> {t("Edit")}
           </Button>
         </header>
 
         {activeLease && (
           <Card className="p-5">
-            <div className="text-[1.0625rem] font-semibold leading-tight">Active lease</div>
+            <div className="text-[1.0625rem] font-semibold leading-tight">{t("Active lease")}</div>
             <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-4">
-              <Field label="Property">{activeLease.property_name ?? "—"}</Field>
-              <Field label="Unit">{activeLease.unit_name ?? "—"}</Field>
-              <Field label="Term">
+              <Field label={t("Property")}>{activeLease.property_name ?? "—"}</Field>
+              <Field label={t("Unit")}>{activeLease.unit_name ?? "—"}</Field>
+              <Field label={t("Term")}>
                 {formatDate(activeLease.start_date)} → {formatDate(activeLease.end_date)}
               </Field>
-              <Field label="Monthly rent">{formatMoney(activeLease.monthly_rent, app.settings.currency)}</Field>
+              <Field label={t("Monthly rent")}>{formatMoney(activeLease.monthly_rent, app.settings.currency)}</Field>
             </div>
           </Card>
         )}
 
         <Card className="p-5">
-          <h2 className="mb-3 text-[1.0625rem] font-semibold leading-tight">About</h2>
+          <h2 className="mb-3 text-[1.0625rem] font-semibold leading-tight">{t("About")}</h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <Field label="Date of birth">{tenant.date_of_birth ? formatDate(tenant.date_of_birth) : "—"}</Field>
-            <Field label="Emergency contact">{tenant.emergency_contact || "—"}</Field>
-            <Field label="Employer">{tenant.employer || "—"}</Field>
-            <Field label="Monthly income">
+            <Field label={t("Date of birth")}>{tenant.date_of_birth ? formatDate(tenant.date_of_birth) : "—"}</Field>
+            <Field label={t("Emergency contact")}>{tenant.emergency_contact || "—"}</Field>
+            <Field label={t("Employer")}>{tenant.employer || "—"}</Field>
+            <Field label={t("Monthly income")}>
               {tenant.monthly_income != null ? formatMoney(tenant.monthly_income, app.settings.currency) : "—"}
             </Field>
           </div>
           {tenant.notes && (
             <>
-              <div className="mt-4 text-[0.9375rem] font-semibold leading-tight">Notes</div>
+              <div className="mt-4 text-[0.9375rem] font-semibold leading-tight">{t("Notes")}</div>
               <p className="mt-1 whitespace-pre-wrap text-sm">{tenant.notes}</p>
             </>
           )}
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-[1.0625rem] font-semibold leading-tight">Lease history</h2>
+          <h2 className="mb-3 text-[1.0625rem] font-semibold leading-tight">{t("Lease history")}</h2>
           {leases.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No leases yet.</p>
+            <p className="text-sm text-muted-foreground">{t("No leases yet.")}</p>
           ) : (
             <ul className="divide-y">
               {leases.map((l) => (
@@ -129,10 +130,10 @@ export function TenantPage({ id, navigate }: { id: number; navigate: (to: string
                       {l.property_name} · {l.unit_name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDate(l.start_date)} → {formatDate(l.end_date)} · {formatMoney(l.monthly_rent, app.settings.currency)}/mo
+                      {formatDate(l.start_date)} → {formatDate(l.end_date)} · {formatMoney(l.monthly_rent, app.settings.currency)}{t("/mo")}
                     </p>
                   </div>
-                  <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{l.status}</Badge>
+                  <Badge variant={l.status === "active" ? "default" : "secondary"} className="capitalize">{t(l.status)}</Badge>
                 </li>
               ))}
             </ul>

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Unit, WorkOrder, WorkOrderPriority, WorkOrderStatus } from "@/types";
+import { t } from "@/i18n";
 
 interface Props {
   open: boolean;
@@ -18,18 +19,18 @@ interface Props {
 }
 
 const PRIORITIES: { value: WorkOrderPriority; label: string }[] = [
-  { value: "low", label: "Low" },
-  { value: "normal", label: "Normal" },
-  { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
+  { value: "low", label: t("Low") },
+  { value: "normal", label: t("Normal") },
+  { value: "high", label: t("High") },
+  { value: "urgent", label: t("Urgent") },
 ];
 
 const STATUSES: { value: WorkOrderStatus; label: string }[] = [
-  { value: "open", label: "Open" },
-  { value: "assigned", label: "Assigned" },
-  { value: "in_progress", label: "In progress" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "open", label: t("Open") },
+  { value: "assigned", label: t("Assigned") },
+  { value: "in_progress", label: t("In progress") },
+  { value: "completed", label: t("Completed") },
+  { value: "cancelled", label: t("Cancelled") },
 ];
 
 export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSaved }: Props) {
@@ -133,17 +134,17 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{workOrder ? "Edit work order" : "New work order"}</DialogTitle>
+          <DialogTitle>{workOrder ? t("Edit work order") : t("New work order")}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-3">
           <div>
-            <Label htmlFor="wo-title">Title</Label>
-            <Input id="wo-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Leaking kitchen faucet" />
+            <Label htmlFor="wo-title">{t("Title")}</Label>
+            <Input id="wo-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("Leaking kitchen faucet")} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Property</Label>
+              <Label>{t("Property")}</Label>
               <Select value={String(propertyId || "")} onValueChange={(v) => { setPropertyId(v ? Number(v) : ""); setUnitId(""); }}>
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
@@ -154,7 +155,7 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
               </Select>
             </div>
             <div>
-              <Label>Unit</Label>
+              <Label>{t("Unit")}</Label>
               <Select value={String(unitId || "")} onValueChange={(v) => setUnitId(v ? Number(v) : "")}>
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
@@ -166,12 +167,12 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
             </div>
           </div>
           <div>
-            <Label htmlFor="wo-desc">Description</Label>
+            <Label htmlFor="wo-desc">{t("Description")}</Label>
             <Textarea id="wo-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label>Priority</Label>
+              <Label>{t("Priority")}</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as WorkOrderPriority)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -180,7 +181,7 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
               </Select>
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>{t("Status")}</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as WorkOrderStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -189,7 +190,7 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
               </Select>
             </div>
             <div>
-              <Label>Vendor</Label>
+              <Label>{t("Vendor")}</Label>
               <Select value={String(vendorId || "")} onValueChange={(v) => setVendorId(v ? Number(v) : "")}>
                 <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
@@ -202,16 +203,16 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="wo-sched">Scheduled date</Label>
+              <Label htmlFor="wo-sched">{t("Scheduled date")}</Label>
               <Input id="wo-sched" type="date" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="wo-cost">Cost</Label>
+              <Label htmlFor="wo-cost">{t("Cost")}</Label>
               <Input id="wo-cost" type="number" value={cost} onChange={(e) => setCost(e.target.value)} />
             </div>
           </div>
           <div>
-            <Label htmlFor="wo-notes">Notes</Label>
+            <Label htmlFor="wo-notes">{t("Notes")}</Label>
             <Textarea id="wo-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
         </div>
@@ -219,12 +220,12 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
         <DialogFooter className="mt-2">
           {workOrder && (
             <Button type="button" variant="destructive" className="sm:mr-auto" onClick={() => setConfirming(true)}>
-              Delete
+              {t("Delete")}
             </Button>
           )}
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>{t("Cancel")}</Button>
           <Button type="button" onClick={save} disabled={saving || !title.trim()}>
-            {workOrder ? "Save changes" : "Create work order"}
+            {workOrder ? t("Save changes") : t("Create work order")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -233,8 +234,8 @@ export function WorkOrderDialog({ open, onOpenChange, workOrder, defaults, onSav
       <ConfirmDelete
         open={confirming}
         onOpenChange={setConfirming}
-        title="Delete this work order?"
-        description="Its history and notes go with it. This cannot be undone."
+        title={t("Delete this work order?")}
+        description={t("Its history and notes go with it. This cannot be undone.")}
         onConfirm={remove}
       />
     </>

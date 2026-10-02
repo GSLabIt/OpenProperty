@@ -22,28 +22,28 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   default_rent_due_day: "1",
   late_fee_amount: "50",
   late_fee_grace_days: "5",
-  currency: "USD",
+  currency: "EUR",
 };
 
 const DEMO_PROPERTIES: Array<[string, string, string, string, string, string, string]> = [
-  ["Oakwood Estate", "single_family", "210 Oakwood Ln", "Austin", "TX", "78704", "emerald"],
-  ["Honeybee Hideaway", "single_family", "88 Bramble Ct", "Austin", "TX", "78704", "amber"],
-  ["308 Mission Apartments", "multi_family", "308 Mission St", "Austin", "TX", "78702", "sky"],
+  ["Villa Le Querce", "single_family", "Via delle Querce 21", "Bologna", "BO", "40125", "emerald"],
+  ["Casa del Glicine", "single_family", "Via dei Glicini 8", "Bologna", "BO", "40133", "amber"],
+  ["Residenza San Vitale", "multi_family", "Via San Vitale 30", "Bologna", "BO", "40125", "sky"],
 ];
 
 /** property index (into DEMO_PROPERTIES), name, beds, baths, sqft, rent, status */
 const DEMO_UNITS: Array<[number, string, number, number, number, number, string]> = [
-  [0, "Main house", 3, 2, 1450, 2300, "occupied"],
-  [1, "Main house", 2, 1, 980, 1700, "occupied"],
-  [2, "Unit 1", 1, 1, 620, 1450, "occupied"],
-  [2, "Unit 2", 1, 1, 620, 1450, "vacant"],
-  [2, "Unit 3", 2, 1, 850, 1850, "occupied"],
+  [0, "Casa principale", 3, 2, 1450, 2300, "occupied"],
+  [1, "Casa principale", 2, 1, 980, 1700, "occupied"],
+  [2, "Interno 1", 1, 1, 620, 1450, "occupied"],
+  [2, "Interno 2", 1, 1, 620, 1450, "vacant"],
+  [2, "Interno 3", 2, 1, 850, 1850, "occupied"],
 ];
 
 const DEMO_VENDORS: Array<[string, string, string, string]> = [
-  ["Emerald Pool Service", "general", "512-555-0144", "emerald"],
-  ["Hill Country Plumbing", "plumber", "512-555-0188", "sky"],
-  ["Bright Spark Electric", "electrician", "512-555-0102", "amber"],
+  ["Piscine Smeraldo", "general", "051 555 0144", "emerald"],
+  ["Idraulica Rossi", "plumber", "051 555 0188", "sky"],
+  ["Elettroimpianti Bianchi", "electrician", "051 555 0102", "amber"],
 ];
 
 let seeded = false; // per-isolate fast path; the COUNT re-checks are cheap
