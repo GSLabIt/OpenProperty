@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Vendor, VendorCategory } from "@/types";
 import { PageShell } from "@/components/page-shell";
 import { t } from "@/i18n";
+import { FiscalSettingsTab } from "../fiscal/fiscal-settings";
 
 const COLORS = ["sky", "emerald", "amber", "rose", "violet", "fuchsia", "teal", "orange", "slate"];
 
@@ -46,6 +47,7 @@ export function SettingsPage() {
           <TabsList>
             <TabsTrigger value="vendors">{t("Vendors")}</TabsTrigger>
             <TabsTrigger value="policy">{t("Rent policy")}</TabsTrigger>
+            <TabsTrigger value="fiscal">{t("Fiscal")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="vendors" className="mt-4">
@@ -53,6 +55,9 @@ export function SettingsPage() {
           </TabsContent>
           <TabsContent value="policy" className="mt-4">
             <PolicyTab />
+          </TabsContent>
+          <TabsContent value="fiscal" className="mt-4">
+            <FiscalSettingsTab />
           </TabsContent>
         </Tabs>
     </PageShell>

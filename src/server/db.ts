@@ -34,7 +34,11 @@ let ready: Promise<unknown> | null = null;
 export function initDB(_env?: unknown): void {
   if (pool) return;
   pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-  ready = pool.query(toPg(fs.readFileSync(new URL("./schema.sql", import.meta.url), "utf8")));
+  ready = (async () => {
+    for (const f of ["./schema.sql", "./schema-it.sql"]) {
+      await pool!.query(toPg(fs.readFileSync(new URL(f, import.meta.url), "utf8")));
+    }
+  })();
 }
 
 async function exec(sql: string, params: unknown[]) {
@@ -52,8 +56,8 @@ export async function get<T = Record<string, unknown>>(sql: string, params: unkn
 }
 
 export async function run(sql: string, params: unknown[] = []): Promise<{ changes: number; lastInsertRowid: number }> {
-  // Every table but `settings` has a serial `id`: that is SQLite's lastInsertRowid.
-  const ret = /^\s*INSERT INTO (?!settings\b)/i.test(sql) && !/RETURNING/i.test(sql) ? " RETURNING id" : "";
+  // Tables with a serial `id` give SQLite's lastInsertRowid; these keyed tables have none.
+  const ret = /^\s*INSERT INTO (?!(?:settings|lease_it|unit_it)\b)/i.test(sql) && !/RETURNING/i.test(sql) ? " RETURNING id" : "";
   const r = await exec(sql + ret, params);
   return { changes: r.rowCount ?? 0, lastInsertRowid: Number(r.rows[0]?.id ?? 0) };
 }

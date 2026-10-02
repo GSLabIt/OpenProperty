@@ -7,6 +7,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
 import api from "./index";
+import it from "./it";
 
 const SECRET = process.env.AUTH_SECRET ?? "";
 const EMAIL = process.env.ADMIN_EMAIL ?? "";
@@ -56,6 +57,7 @@ app.use("*", async (c, next) => {
   return c.req.path.startsWith("/api/") ? c.json({ error: "Unauthorized" }, 401) : c.redirect("/login");
 });
 
+app.route("/", it);
 app.route("/", api);
 app.use("*", serveStatic({ root: "./dist" }));
 app.get("*", (c) => c.html(fs.readFileSync("./dist/index.html", "utf8"))); // SPA fallback

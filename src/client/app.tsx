@@ -14,6 +14,7 @@ import { LeasesPage } from "./components/leases/leases-page";
 import { RentPage } from "./components/rent/rent-page";
 import { MaintenancePage } from "./components/maintenance/maintenance-page";
 import { SettingsPage } from "./components/settings/settings-page";
+import { FiscalPage } from "./components/fiscal/fiscal-page";
 
 /**
  * The navigation, defined once.
@@ -37,6 +38,7 @@ const PORTFOLIO: AppNavItem[] = [
 const OPERATIONS: AppNavItem[] = [
   { id: "rent", label: t("Rent"), href: "/rent", icon: "dollar-sign", color: "amber" },
   { id: "maintenance", label: t("Maintenance"), href: "/maintenance", icon: "list-checks", color: "orange" },
+  { id: "fiscal", label: t("Fiscal"), href: "/fiscal", icon: "calendar", color: "blue" },
 ];
 const ADMIN: AppNavItem[] = [
   { id: "settings", label: t("Settings"), href: "/settings", icon: "settings" },
@@ -94,6 +96,7 @@ export function App() {
               {route.name === "leases" && <LeasesPage navigate={navigate} />}
               {route.name === "rent" && <RentPage />}
               {route.name === "maintenance" && <MaintenancePage />}
+              {route.name === "fiscal" && <FiscalPage />}
               {route.name === "settings" && <SettingsPage />}
               {route.name === "not-found" && (
                 <Placeholder title={t("Not found")} message={t("That page doesn't exist.")} />

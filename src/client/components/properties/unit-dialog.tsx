@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import type { Unit, UnitStatus } from "@/types";
 import { t } from "@/i18n";
+import { UnitFiscalFields } from "../fiscal/unit-fiscal-fields";
+import { useUnitFiscal } from "../fiscal/fiscal-api";
 
 interface Props {
   open: boolean;
@@ -27,6 +29,7 @@ const STATUSES: { value: UnitStatus; label: string }[] = [
 
 export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Props) {
   const app = useApp();
+  const fiscal = useUnitFiscal(open, unit?.id);
   const [name, setName] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [bedrooms, setBedrooms] = useState("1");
@@ -64,8 +67,10 @@ export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Pr
       };
       if (unit) {
         await app.updateUnit(unit.id, payload);
+        await fiscal.save(unit.id);
       } else {
-        await app.createUnit(payload);
+        const created = await app.createUnit(payload);
+        await fiscal.save(created.id);
       }
       onSaved?.();
       onOpenChange(false);
@@ -90,7 +95,7 @@ export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Pr
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{unit ? t("Edit unit") : t("New unit")}</DialogTitle>
         </DialogHeader>
@@ -128,6 +133,7 @@ export function UnitDialog({ open, onOpenChange, propertyId, unit, onSaved }: Pr
               </Select>
             </div>
           </div>
+          <UnitFiscalFields value={fiscal.value} onChange={fiscal.setValue} />
           <div>
             <Label htmlFor="unit-notes">{t("Notes")}</Label>
             <Textarea id="unit-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />

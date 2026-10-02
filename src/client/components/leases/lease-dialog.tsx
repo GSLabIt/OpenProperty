@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import type { Lease, LeaseStatus, Tenant, Unit } from "@/types";
 import { t } from "@/i18n";
+import { LeaseFiscalFields } from "../fiscal/lease-fiscal-fields";
+import { useLeaseFiscal } from "../fiscal/fiscal-api";
 
 interface Props {
   open: boolean;
@@ -29,6 +31,7 @@ const STATUSES: { value: LeaseStatus; label: string }[] = [
 
 export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Props) {
   const app = useApp();
+  const fiscal = useLeaseFiscal(open, lease?.id);
   const [units, setUnits] = useState<Unit[]>([]);
   const [confirming, setConfirming] = useState(false);
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -102,9 +105,11 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
       };
       if (lease) {
         await app.updateLease(lease.id, payload);
+        await fiscal.save(lease.id);
       } else {
         // Auto-create tenant fallback would go here, but we require selecting an existing tenant.
-        await app.createLease(payload);
+        const created = await app.createLease(payload);
+        await fiscal.save(created.id);
       }
       onSaved?.();
       onOpenChange(false);
@@ -149,7 +154,7 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{lease ? t("Edit lease") : t("New lease")}</DialogTitle>
         </DialogHeader>
@@ -221,6 +226,7 @@ export function LeaseDialog({ open, onOpenChange, lease, defaults, onSaved }: Pr
               </Select>
             </div>
           </div>
+          <LeaseFiscalFields open={open} value={fiscal.value} onChange={fiscal.setValue} />
           <div>
             <Label htmlFor="l-notes">{t("Notes")}</Label>
             <Textarea id="l-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />

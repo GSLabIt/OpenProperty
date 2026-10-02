@@ -113,3 +113,11 @@ These can all be layered on top once you fork the template.
 ## License
 
 MIT
+
+## GSLabIt fork
+
+Self-hosted on Node + PostgreSQL (`DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`), Italian UI
+(`src/client/i18n.ts`, English string as key) and Italian rental features kept in their own files so upstream
+merges stay clean: `src/server/{it.ts,it-fiscal.ts,schema-it.sql}` and `src/client/components/fiscal/`.
+Contract types, payment methods and ISTAT modes are lists editable in Settings → Fiscal. Run the fiscal checks
+with `npx tsx src/server/it-fiscal.test.ts`.

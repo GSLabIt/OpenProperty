@@ -7,6 +7,7 @@ import { leases } from "./leases";
 import { rent } from "./rent";
 import { maintenance } from "./maintenance";
 import { settings } from "./settings";
+import { fiscal } from "./fiscal";
 
 export const IT: Record<string, string> = {
   ...shell,
@@ -17,4 +18,5 @@ export const IT: Record<string, string> = {
   ...rent,
   ...maintenance,
   ...settings,
+  ...fiscal,
 };
