@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageShell } from "@/components/page-shell";
 import { t } from "@/i18n";
 
-interface Deadline { date: string; kind: string; lease_id: number | null; label: string; amount?: number }
+interface Deadline { date: string; kind: string; lease_id: number | null; label: string; amount?: number; landlord_share?: number }
 interface IstatItem { lease_id: number; label: string; due: string; monthly_rent: number; pct: number; foi: number; foi_source: string; delta: number; new_rent: number }
 interface ImuItem { unit_id: number; label: string; comune: string | null; uso: string; uso_derived: boolean; exempt: boolean; cadastral_category: string; cadastral_income: number; rate_permille: number; annual: number | null; acconto: number | null; saldo: number | null }
 
@@ -62,7 +62,7 @@ function DeadlinesTab() {
         <TableHeader>
           <TableRow>
             <TableHead>{t("Date")}</TableHead><TableHead>{t("Deadline")}</TableHead>
-            <TableHead>{t("Lease")}</TableHead><TableHead className="text-right">{t("Amount")}</TableHead>
+            <TableHead>{t("Lease")}</TableHead><TableHead className="text-right">{t("Amount")}</TableHead><TableHead className="text-right">{t("Your share")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -72,6 +72,7 @@ function DeadlinesTab() {
               <TableCell>{t(KIND[d.kind] ?? d.kind)}</TableCell>
               <TableCell className="text-muted-foreground">{d.lease_id ? d.label : ""}</TableCell>
               <TableCell className="text-right tabular-nums">{d.amount != null ? formatMoney(d.amount, settings.currency) : ""}</TableCell>
+              <TableCell className="text-right tabular-nums">{d.landlord_share != null ? formatMoney(d.landlord_share, settings.currency) : ""}</TableCell>
             </TableRow>
           ))}
         </TableBody>

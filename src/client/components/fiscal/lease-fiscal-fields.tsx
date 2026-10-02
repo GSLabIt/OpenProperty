@@ -60,6 +60,17 @@ export function LeaseFiscalFields({ open, value, onChange }: { open: boolean; va
           </Select>
         </div>
       </div>
+      <div>
+        <Label>{t("Registration tax paid by")}</Label>
+        <Select value={value.registration_tax_payer} onValueChange={(v) => set("registration_tax_payer", v as LeaseIt["registration_tax_payer"])} disabled={cedolare}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="split">{t("Split 50/50 (by law)")}</SelectItem>
+            <SelectItem value="landlord">{t("Landlord (by agreement)")}</SelectItem>
+            <SelectItem value="tenant">{t("Tenant (by agreement)")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="l-regdate">{t("Registration date")}</Label>

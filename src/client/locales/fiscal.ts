@@ -76,4 +76,9 @@ export const fiscal: Record<string, string> = {
   "IMU {year}. Rates by municipality (the property city), use and category from Settings → Fiscal; canone concordato: 25% reduction.": "IMU {year}. Aliquote per comune (città dell'immobile), uso e categoria da Impostazioni → Fiscalità; canone concordato: riduzione del 25%. * = uso ricavato dal contratto.",
   "IMU rates": "Aliquote IMU",
   "One per line as Municipality|Use|Category|permille, e.g. Bologna|locata_concordato|A|8.6; use * for any. Short form Category|permille also works. The most specific row wins; otherwise the default rate above. Uses: abitazione_principale, locata_libero, locata_concordato, disposizione, comodato, commerciale.": "Una per riga come Comune|Uso|Categoria|per mille, es. Bologna|locata_concordato|A|8.6; usa * per qualsiasi. Vale anche la forma breve Categoria|per mille. Vale la riga più specifica; altrimenti l'aliquota predefinita qui sopra. Usi: abitazione_principale, locata_libero, locata_concordato, disposizione, comodato, commerciale.",
+  "Registration tax paid by": "Imposta di registro a carico di",
+  "Split 50/50 (by law)": "Metà ciascuno (per legge)",
+  "Landlord (by agreement)": "Locatore (per accordo)",
+  "Tenant (by agreement)": "Conduttore (per accordo)",
+  "Your share": "Tua quota",
 };

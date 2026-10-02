@@ -13,6 +13,7 @@ export interface LeaseIt {
   contract_type: string | null;
   tax_regime: "irpef" | "cedolare_21" | "cedolare_10";
   registration_tax_mode: "annual" | "full_term";
+  registration_tax_payer: "split" | "landlord" | "tenant";
   payment_method: string | null;
   registration_date: string | null;
   registration_number: string | null;
@@ -29,7 +30,7 @@ export interface UnitIt {
 }
 
 export const EMPTY_LEASE_IT: LeaseIt = {
-  contract_type: null, tax_regime: "irpef", registration_tax_mode: "annual", payment_method: null,
+  contract_type: null, tax_regime: "irpef", registration_tax_mode: "annual", registration_tax_payer: "split", payment_method: null,
   registration_date: null, registration_number: null, istat_mode: null, istat_last_adjust: null,
 };
 export const EMPTY_UNIT_IT: UnitIt = {

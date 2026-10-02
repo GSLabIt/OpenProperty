@@ -66,6 +66,7 @@ const LeaseIt = z.object({
   contract_type: z.string().max(100).nullable().optional(),
   tax_regime: z.enum(["irpef", "cedolare_21", "cedolare_10"]).optional(),
   registration_tax_mode: z.enum(["annual", "full_term"]).optional(),
+  registration_tax_payer: z.enum(["split", "landlord", "tenant"]).optional(),
   payment_method: z.string().max(100).nullable().optional(),
   registration_date: z.string().nullable().optional(),
   registration_number: z.string().max(100).nullable().optional(),
@@ -77,7 +78,7 @@ app.get("/api/it/lease/:id", async (c) => {
   const id = intParam(c.req.param("id"));
   if (!id) return c.json({ error: "Invalid id" }, 400);
   const row = await get("SELECT * FROM lease_it WHERE lease_id = ?", [id]);
-  return c.json({ lease_it: row ?? { lease_id: id, tax_regime: "irpef", registration_tax_mode: "annual" } });
+  return c.json({ lease_it: row ?? { lease_id: id, tax_regime: "irpef", registration_tax_mode: "annual", registration_tax_payer: "split" } });
 });
 
 app.put("/api/it/lease/:id", async (c) => {
@@ -88,13 +89,13 @@ app.put("/api/it/lease/:id", async (c) => {
   if (!parsed.success) return c.json({ error: parsed.error.issues[0]?.message ?? "Invalid body" }, 400);
   const d = parsed.data;
   await run(
-    `INSERT INTO lease_it (lease_id, contract_type, tax_regime, registration_tax_mode, payment_method, registration_date, registration_number, istat_mode, istat_last_adjust)
-     VALUES (?, ?, COALESCE(?, 'irpef'), COALESCE(?, 'annual'), ?, ?, ?, ?, ?)
+    `INSERT INTO lease_it (lease_id, contract_type, tax_regime, registration_tax_mode, registration_tax_payer, payment_method, registration_date, registration_number, istat_mode, istat_last_adjust)
+     VALUES (?, ?, COALESCE(?, 'irpef'), COALESCE(?, 'annual'), COALESCE(?, 'split'), ?, ?, ?, ?, ?)
      ON CONFLICT (lease_id) DO UPDATE SET contract_type = excluded.contract_type, tax_regime = excluded.tax_regime,
-       registration_tax_mode = excluded.registration_tax_mode, payment_method = excluded.payment_method,
+       registration_tax_mode = excluded.registration_tax_mode, registration_tax_payer = excluded.registration_tax_payer, payment_method = excluded.payment_method,
        registration_date = excluded.registration_date, registration_number = excluded.registration_number,
        istat_mode = excluded.istat_mode, istat_last_adjust = excluded.istat_last_adjust`,
-    [id, d.contract_type ?? null, d.tax_regime ?? null, d.registration_tax_mode ?? null, d.payment_method ?? null,
+    [id, d.contract_type ?? null, d.tax_regime ?? null, d.registration_tax_mode ?? null, d.registration_tax_payer ?? null, d.payment_method ?? null,
      d.registration_date || null, d.registration_number ?? null, d.istat_mode ?? null, d.istat_last_adjust || null],
   );
   return c.json({ lease_it: await get("SELECT * FROM lease_it WHERE lease_id = ?", [id]) });
@@ -136,7 +137,7 @@ app.put("/api/it/unit/:id", async (c) => {
 // ── Aggregates ──────────────────────────────────────────────────────
 const FACTS_SQL = `
   SELECT l.id AS lease_id, p.name || ' · ' || u.name AS label, l.start_date, l.end_date, l.monthly_rent, l.status,
-         i.contract_type, i.tax_regime, i.registration_tax_mode, i.registration_date, i.istat_mode, i.istat_last_adjust
+         i.contract_type, i.tax_regime, i.registration_tax_mode, i.registration_tax_payer, i.registration_date, i.istat_mode, i.istat_last_adjust
   FROM leases l
   JOIN units u ON u.id = l.unit_id
   JOIN properties p ON p.id = u.property_id

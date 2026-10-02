@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { addMonthsIso, foiVariation, imuUnit, deriveImuUse, imuRateFor, parseFoiText, istatNewRent, istatPct, leaseDeadlines, parseCfg, registrationTax } from "./it-fiscal";
+import { landlordShare, addMonthsIso, foiVariation, imuUnit, deriveImuUse, imuRateFor, parseFoiText, istatNewRent, istatPct, leaseDeadlines, parseCfg, registrationTax } from "./it-fiscal";
 
 // ISTAT: 1000 EUR, FOI 2.0%, 75% -> +15
 assert.deepEqual(istatNewRent(1000, 2, 75), { delta: 15, newRent: 1015 });
@@ -50,4 +50,12 @@ const idx = parseFoiText("2025-06;120.0\n2026-06;122,4\nnoise line");
 assert.deepEqual(idx, { "2025-06": 120, "2026-06": 122.4 });
 assert.equal(foiVariation(idx, "2026-07-01"), 2);
 assert.equal(foiVariation(idx, "2027-07-01"), null);
+// Registration tax split
+assert.equal(landlordShare(200, "split"), 100);
+assert.equal(landlordShare(200, "landlord"), 200);
+assert.equal(landlordShare(200, "tenant"), 0);
+const regs = leaseDeadlines({ ...base, tax_regime: "irpef", istat_mode: null, registration_tax_payer: "tenant" } as never, cfg);
+assert.equal(regs[0].kind, "registration");
+assert.equal(regs[0].amount, 192);
+assert.equal(regs[0].landlord_share, 0);
 console.log("it-fiscal ok");

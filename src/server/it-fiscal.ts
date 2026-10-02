@@ -164,22 +164,34 @@ export function foiVariation(index: FoiIndex, anniversary: string): number | nul
 /** Imposta di registro: 2% of the annual rent, minimum 67 EUR. ponytail: bollo not included. */
 export const registrationTax = (monthlyRent: number) => Math.max(67, Math.round(monthlyRent * 12 * 2) / 100);
 
+/** Landlord's part of the registration tax. By law it is split 50/50; parties may agree otherwise (both stay jointly liable). */
+export function landlordShare(total: number, payer: string | null | undefined): number {
+  if (payer === "landlord") return total;
+  if (payer === "tenant") return 0;
+  return Math.round(total * 50) / 100;
+}
+
 export type LeaseFacts = {
   lease_id: number; label: string; start_date: string; end_date: string;
   monthly_rent: number; status: string;
-  contract_type: string | null; tax_regime: string | null; registration_tax_mode: string | null;
+  contract_type: string | null; tax_regime: string | null; registration_tax_mode: string | null; registration_tax_payer?: string | null;
   registration_date: string | null; istat_mode: string | null;
 };
-export type Deadline = { date: string; kind: string; lease_id: number | null; label: string; amount?: number };
+export type Deadline = { date: string; kind: string; lease_id: number | null; label: string; amount?: number; landlord_share?: number };
 
 export function leaseDeadlines(l: LeaseFacts, cfg: Cfg): Deadline[] {
   if (l.status !== "active" && l.status !== "upcoming") return [];
   const out: Deadline[] = [];
   const add = (date: string, kind: string, amount?: number) =>
-    out.push({ date, kind, lease_id: l.lease_id, label: l.label, amount });
+    out.push({
+      date, kind, lease_id: l.lease_id, label: l.label, amount,
+      landlord_share: amount === undefined ? undefined : landlordShare(amount, l.registration_tax_payer),
+    });
+  const yearly = !isCedolare(l.tax_regime) && l.registration_tax_mode !== "full_term";
 
-  if (!l.registration_date) add(addDaysIso(l.start_date, 30), "registration");
-  if (!isCedolare(l.tax_regime) && l.registration_tax_mode !== "full_term") {
+  // The first year's tax is paid together with the registration.
+  if (!l.registration_date) add(addDaysIso(l.start_date, 30), "registration", yearly ? registrationTax(l.monthly_rent) : undefined);
+  if (yearly) {
     // yearly renewal tax, 30 days after each anniversary
     for (let y = 1; addMonthsIso(l.start_date, 12 * y) < l.end_date; y++) {
       add(addDaysIso(addMonthsIso(l.start_date, 12 * y), 30), "registration_renewal", registrationTax(l.monthly_rent));
