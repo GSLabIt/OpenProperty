@@ -1,9 +1,10 @@
 // Italian-specific API, mounted next to upstream's routes (see node.ts).
 import { Hono } from "hono";
 import { z } from "zod";
+import { fetchIstatFlow, ISTAT_FLOWS } from "./it-istat";
 import { get, query, run } from "./db";
 import {
-  addDaysIso, addMonthsIso, foiVariation, deriveImuUse, imuUnit, IMU_USES, istatNewRent, istatPct, leaseDeadlines, parseCfg, parseFoiText,
+  addDaysIso, addMonthsIso, foiVariation, deriveImuUse, imuUnit, IMU_USES, istatNewRent, istatPct, leaseDeadlines, parseCfg, parseFoiText, publishedVariation,
   type Deadline, type ImuUse, type FoiIndex, type LeaseFacts,
 } from "./it-fiscal";
 
@@ -12,6 +13,40 @@ const app = new Hono();
 async function loadFoi(): Promise<FoiIndex> {
   const rows = await query<{ month: string; value: number }>("SELECT month, value FROM foi_index");
   return Object.fromEntries(rows.map((r) => [r.month, r.value]));
+}
+
+async function loadVariations(): Promise<Record<string, number>> {
+  const rows = await query<{ month: string; pct: number }>("SELECT month, pct FROM foi_variation");
+  return Object.fromEntries(rows.map((r) => [r.month, r.pct]));
+}
+
+async function getSetting(key: string): Promise<string | null> {
+  return (await get<{ value: string }>("SELECT value FROM settings WHERE key = ?", [key]))?.value ?? null;
+}
+async function putSetting(key: string, value: string) {
+  await run("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", [key, value]);
+}
+
+/**
+ * Pull the FOI variation from ISTAT. Guarded against hammering (ISTAT blocks an IP that exceeds 5 queries/min):
+ * automatic runs at most once per 20 h; a manual run waits at least 2 minutes after the last attempt.
+ */
+export async function refreshFoiFromIstat(manual = false): Promise<number> {
+  const last = Number(await getSetting("it_foi_istat_attempt")) || 0;
+  const minGap = manual ? 2 * 60_000 : 20 * 3600_000;
+  if (Date.now() - last < minGap) return 0;
+  await putSetting("it_foi_istat_attempt", String(Date.now())); // set first: a failure must not cause a retry storm
+  const have = await loadVariations();
+  let stored = 0;
+  for (const f of ISTAT_FLOWS) {
+    if (f.once && Object.keys(have).some((m) => m >= f.from && (!f.to || m <= f.to))) continue; // closed series, already loaded
+    const data = await fetchIstatFlow(f);
+    for (const [month, pct] of Object.entries(data)) {
+      await run("INSERT INTO foi_variation (month, pct) VALUES (?, ?) ON CONFLICT (month) DO UPDATE SET pct = excluded.pct", [month, pct]);
+      stored++;
+    }
+  }
+  return stored;
 }
 
 async function saveFoi(index: FoiIndex): Promise<number> {
@@ -23,9 +58,9 @@ async function saveFoi(index: FoiIndex): Promise<number> {
 }
 
 /** Fetch monthly FOI indices from the configured CSV URL. Returns the number of months stored. */
-export async function refreshFoi(): Promise<number> {
+export async function refreshFoi(manual = false): Promise<number> {
   const { foiUrl } = await loadCfg();
-  if (!foiUrl) return 0;
+  if (!foiUrl) return refreshFoiFromIstat(manual); // default source: ISTAT
   if (!/^https:\/\//i.test(foiUrl)) throw new Error("FOI URL must be https");
   const res = await fetch(foiUrl, { signal: AbortSignal.timeout(20_000) });
   if (!res.ok) throw new Error(`FOI source answered ${res.status}`);
@@ -53,7 +88,7 @@ app.put("/api/it/foi", async (c) => {
 
 app.post("/api/it/foi/refresh", async (c) => {
   try {
-    return c.json({ stored: await refreshFoi() });
+    return c.json({ stored: await refreshFoi(true) });
   } catch (e) {
     return c.json({ error: (e as Error).message }, 502);
   }
@@ -199,6 +234,7 @@ app.get("/api/it/istat", async (c) => {
   const cfg = await loadCfg();
   const horizon = addDaysIso(today(), 60);
   const index = await loadFoi();
+  const variations = await loadVariations();
   const items = [];
   for (const f of await query<Facts>(FACTS_SQL)) {
     if (f.status !== "active") continue;
@@ -210,7 +246,7 @@ app.get("/api/it/istat", async (c) => {
     while (due < f.start_date) due = addMonthsIso(due, 12);
     if (pct === 0 || due > horizon || due >= f.end_date) continue;
     // Per-lease variation from the monthly index when available, else the manual yearly figure.
-    const fromIndex = foiVariation(index, due);
+    const fromIndex = publishedVariation(variations, due) ?? foiVariation(index, due);
     const foi = fromIndex ?? cfg.foiVariation;
     const { delta, newRent } = istatNewRent(f.monthly_rent, foi, pct);
     items.push({ lease_id: f.lease_id, label: f.label, due, monthly_rent: f.monthly_rent, pct, foi, foi_source: fromIndex === null ? "manual" : "index", delta, new_rent: newRent });

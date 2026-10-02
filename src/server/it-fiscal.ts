@@ -153,6 +153,12 @@ export function parseFoiText(text: string): FoiIndex {
   return out;
 }
 
+/** Published variation for an anniversary: the year-on-year % of the month before it. */
+export function publishedVariation(variations: Record<string, number>, anniversary: string): number | null {
+  const m = addMonthsIso(`${anniversary.slice(0, 7)}-01`, -1).slice(0, 7);
+  return variations[m] ?? null;
+}
+
 /** ISTAT variation for an anniversary: index of the previous month vs the same month a year earlier (%). */
 export function foiVariation(index: FoiIndex, anniversary: string): number | null {
   const cur = addMonthsIso(`${anniversary.slice(0, 7)}-01`, -1).slice(0, 7);

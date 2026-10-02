@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { landlordShare, addMonthsIso, foiVariation, imuUnit, deriveImuUse, imuRateFor, parseFoiText, istatNewRent, istatPct, leaseDeadlines, parseCfg, registrationTax } from "./it-fiscal";
+import { publishedVariation, landlordShare, addMonthsIso, foiVariation, imuUnit, deriveImuUse, imuRateFor, parseFoiText, istatNewRent, istatPct, leaseDeadlines, parseCfg, registrationTax } from "./it-fiscal";
 
 // ISTAT: 1000 EUR, FOI 2.0%, 75% -> +15
 assert.deepEqual(istatNewRent(1000, 2, 75), { delta: 15, newRent: 1015 });
@@ -58,4 +58,11 @@ const regs = leaseDeadlines({ ...base, tax_regime: "irpef", istat_mode: null, re
 assert.equal(regs[0].kind, "registration");
 assert.equal(regs[0].amount, 192);
 assert.equal(regs[0].landlord_share, 0);
+// ISTAT CSV + published variation
+import { parseIstatCsv, istatUrl, ISTAT_FLOWS } from "./it-istat";
+const csv = "DATAFLOW,FREQ,REF_AREA,DATA_TYPE,MEASURE,ECOICOP_2,TIME_PERIOD,OBS_VALUE,OBS_STATUS\nX,M,IT,101,7,00ST,2026-06,2.9,\nX,M,IT,101,7,00ST,2026-07,2.8,\nX,M,IT,101,7,00ST,2026-08,,\n";
+assert.deepEqual(parseIstatCsv(csv), { "2026-06": 2.9, "2026-07": 2.8 });
+assert.equal(publishedVariation({ "2026-07": 2.8 }, "2026-08-01"), 2.8);
+assert.equal(publishedVariation({ "2026-07": 2.8 }, "2026-09-01"), null);
+assert.ok(istatUrl(ISTAT_FLOWS[1]).includes("169_748_DF_DCSP_FOI1B2025_1,1.0/M.IT.101.7.00ST/ALL/"));
 console.log("it-fiscal ok");

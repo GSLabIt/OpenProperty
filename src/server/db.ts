@@ -57,7 +57,7 @@ export async function get<T = Record<string, unknown>>(sql: string, params: unkn
 
 export async function run(sql: string, params: unknown[] = []): Promise<{ changes: number; lastInsertRowid: number }> {
   // Tables with a serial `id` give SQLite's lastInsertRowid; these keyed tables have none.
-  const ret = /^\s*INSERT INTO (?!(?:settings|lease_it|unit_it|foi_index)\b)/i.test(sql) && !/RETURNING/i.test(sql) ? " RETURNING id" : "";
+  const ret = /^\s*INSERT INTO (?!(?:settings|lease_it|unit_it|foi_index|foi_variation)\b)/i.test(sql) && !/RETURNING/i.test(sql) ? " RETURNING id" : "";
   const r = await exec(sql + ret, params);
   return { changes: r.rowCount ?? 0, lastInsertRowid: Number(r.rows[0]?.id ?? 0) };
 }

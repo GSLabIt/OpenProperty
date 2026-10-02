@@ -66,4 +66,5 @@ const port = Number(process.env.PORT ?? 3000);
 serve({ fetch: app.fetch, port }, () => console.log(`OpenProperty listening on :${port}`));
 
 // Daily FOI refresh when a source URL is configured; failures are logged, never fatal.
+setTimeout(() => refreshFoi().catch((e) => console.error("FOI refresh:", e.message)), 60_000); // first run shortly after start
 setInterval(() => refreshFoi().catch((e) => console.error("FOI refresh:", e.message)), 24 * 3600 * 1000);

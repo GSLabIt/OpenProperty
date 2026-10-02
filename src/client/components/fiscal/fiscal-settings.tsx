@@ -87,7 +87,7 @@ export function FiscalSettingsTab() {
       <div>
         <Label htmlFor="it_foi_url">{t("FOI source URL (CSV, https)")}</Label>
         <Input id="it_foi_url" value={v.it_foi_url} placeholder="https://…" onChange={(e) => setV({ ...v, it_foi_url: e.target.value })} />
-        <p className="mt-1 text-xs text-muted-foreground">{t("Optional. Lines with a month (YYYY-MM) and the index value. Refreshed daily.")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("Optional. Leave empty to use ISTAT directly (daily). Otherwise a CSV with lines of month (YYYY-MM) and index value.")}</p>
       </div>
       <div>
         <Label htmlFor="foi_text">{t("Monthly FOI indices")}</Label>
@@ -96,7 +96,7 @@ export function FiscalSettingsTab() {
       </div>
       <div className="flex items-center gap-3">
         <Button onClick={save} disabled={saving}>{t("Save settings")}</Button>
-        <Button variant="outline" onClick={refresh} disabled={!v.it_foi_url}>{t("Refresh indices from URL")}</Button>
+        <Button variant="outline" onClick={refresh} >{t("Refresh FOI now")}</Button>
         {foiMsg && <span className="text-sm text-muted-foreground">{foiMsg}</span>}
       </div>
     </Card>

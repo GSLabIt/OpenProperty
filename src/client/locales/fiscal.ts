@@ -57,10 +57,8 @@ export const fiscal: Record<string, string> = {
   Rate: "Aliquota",
   "{n} monthly indices stored.": "{n} indici mensili salvati.",
   "FOI source URL (CSV, https)": "URL sorgente FOI (CSV, https)",
-  "Optional. Lines with a month (YYYY-MM) and the index value. Refreshed daily.": "Facoltativo. Righe con mese (AAAA-MM) e valore dell'indice. Aggiornato ogni giorno.",
   "Monthly FOI indices": "Indici FOI mensili",
   "One per line as YYYY-MM|index. With the indices, ISTAT is computed per contract anniversary instead of using the yearly figure above.": "Uno per riga come AAAA-MM|indice. Con gli indici l'ISTAT è calcolato sull'anniversario di ogni contratto invece che sul dato annuo qui sopra.",
-  "Refresh indices from URL": "Aggiorna indici dall'URL",
   "Use for IMU": "Uso ai fini IMU",
   "Automatic (from the active lease)": "Automatico (dal contratto attivo)",
   "The municipality is the property's city; rates are set in Settings → Fiscal.": "Il comune è la città dell'immobile; le aliquote si impostano in Impostazioni → Fiscalità.",
@@ -81,4 +79,6 @@ export const fiscal: Record<string, string> = {
   "Landlord (by agreement)": "Locatore (per accordo)",
   "Tenant (by agreement)": "Conduttore (per accordo)",
   "Your share": "Tua quota",
+  "Optional. Leave empty to use ISTAT directly (daily). Otherwise a CSV with lines of month (YYYY-MM) and index value.": "Facoltativo. Se vuoto si usa direttamente ISTAT (ogni giorno). Altrimenti un CSV con righe mese (AAAA-MM) e valore dell'indice.",
+  "Refresh FOI now": "Aggiorna FOI ora",
 };
