@@ -18,6 +18,9 @@ if (!SECRET || !EMAIL || !PASSWORD) {
 }
 
 const TTL = 7 * 24 * 3600;
+// Secure cookie unless the instance is explicitly served over plain HTTP (APP_URL=http://..., set by Berth for
+// servers without TLS). Anything else, including APP_URL unset, keeps Secure on.
+const COOKIE_SECURE = !/^http:\/\//i.test(process.env.APP_URL ?? "");
 const sign = (v: string) => createHmac("sha256", SECRET).update(v).digest("hex");
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
@@ -42,7 +45,7 @@ app.post("/login", async (c) => {
   const f = await c.req.parseBody();
   if (same(String(f.email ?? ""), EMAIL) && same(String(f.password ?? ""), PASSWORD)) {
     const exp = String(Math.floor(Date.now() / 1000) + TTL);
-    setCookie(c, "op_session", `${exp}.${sign(exp)}`, { httpOnly: true, sameSite: "Lax", secure: true, path: "/", maxAge: TTL });
+    setCookie(c, "op_session", `${exp}.${sign(exp)}`, { httpOnly: true, sameSite: "Lax", secure: COOKIE_SECURE, path: "/", maxAge: TTL });
     return c.redirect("/");
   }
   return c.html(LOGIN_PAGE + "<p style=color:#b00>Invalid credentials</p>", 401);
