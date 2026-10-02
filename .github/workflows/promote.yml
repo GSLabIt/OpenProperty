@@ -1,0 +1,19 @@
+name: Promote master to production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fast-forward production to master
+        run: |
+          git fetch origin production || true
+          git push origin origin/master:refs/heads/production

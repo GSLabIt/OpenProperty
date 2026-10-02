@@ -1,0 +1,21 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [master, production]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable && corepack prepare pnpm@11 --activate
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm exec tsx src/server/it-fiscal.test.ts
+      - run: pnpm exec tsx scripts/check-i18n.mts   # fails on missing Italian keys, warns on hard-coded English
+      - run: pnpm build

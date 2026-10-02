@@ -8,34 +8,53 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { t } from "@/i18n";
 
-const KEYS = ["it_contract_types", "it_payment_methods", "it_istat_modes", "it_foi_variation", "it_imu_rate"] as const;
+const KEYS = ["it_contract_types", "it_payment_methods", "it_istat_modes", "it_foi_variation", "it_imu_rate", "it_imu_rates", "it_foi_url"] as const;
 const DEFAULTS: Record<string, string> = {
   it_contract_types: "4+4 (libero)\n3+2 (concordato)\nTransitorio\nUso commerciale 6+6\nStudenti universitari",
   it_payment_methods: "Bonifico bancario\nContanti\nAssegno\nRID/SEPA",
   it_istat_modes: "75%|75\n100%|100\nRinunciata|0",
   it_foi_variation: "0",
   it_imu_rate: "10.6",
+  it_imu_rates: "",
+  it_foi_url: "",
 };
 
 export function FiscalSettingsTab() {
   const { setError } = useApp();
   const [v, setV] = useState<Record<string, string>>(DEFAULTS);
   const [saving, setSaving] = useState(false);
+  const [foiText, setFoiText] = useState("");
+  const [foiMsg, setFoiMsg] = useState<string | null>(null);
 
   useEffect(() => {
     api<{ settings: Record<string, string> }>("GET", "/api/settings")
       .then((r) => setV(Object.fromEntries(KEYS.map((k) => [k, r.settings[k] ?? DEFAULTS[k]]))))
       .catch((e) => setError((e as Error).message));
+    api<{ text: string }>("GET", "/api/it/foi").then((r) => setFoiText(r.text)).catch(() => undefined);
   }, [setError]);
 
   async function save() {
     setSaving(true);
     try {
       await api("PUT", "/api/settings", v);
+      const r = await api<{ stored: number }>("PUT", "/api/it/foi", { text: foiText });
+      setFoiMsg(t("{n} monthly indices stored.", { n: r.stored }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function refresh() {
+    setFoiMsg(null);
+    try {
+      await api("PUT", "/api/settings", v); // the URL may have just been edited
+      const r = await api<{ stored: number }>("POST", "/api/it/foi/refresh");
+      setFoiMsg(t("{n} monthly indices stored.", { n: r.stored }));
+      setFoiText((await api<{ text: string }>("GET", "/api/it/foi")).text);
+    } catch (e) {
+      setFoiMsg((e as Error).message);
     }
   }
 
@@ -64,7 +83,22 @@ export function FiscalSettingsTab() {
           <p className="mt-1 text-xs text-muted-foreground">{t("Your municipality's rate for rented homes, per mille.")}</p>
         </div>
       </div>
-      <div><Button onClick={save} disabled={saving}>{t("Save settings")}</Button></div>
+      {area("it_imu_rates", t("IMU rates by category"), t("One per line as Category|permille, e.g. C/1|7.6 or A|10.6. The longest matching prefix wins; otherwise the default rate above."))}
+      <div>
+        <Label htmlFor="it_foi_url">{t("FOI source URL (CSV, https)")}</Label>
+        <Input id="it_foi_url" value={v.it_foi_url} placeholder="https://…" onChange={(e) => setV({ ...v, it_foi_url: e.target.value })} />
+        <p className="mt-1 text-xs text-muted-foreground">{t("Optional. Lines with a month (YYYY-MM) and the index value. Refreshed daily.")}</p>
+      </div>
+      <div>
+        <Label htmlFor="foi_text">{t("Monthly FOI indices")}</Label>
+        <Textarea id="foi_text" rows={6} value={foiText} placeholder="2026-05|123.4" onChange={(e) => setFoiText(e.target.value)} />
+        <p className="mt-1 text-xs text-muted-foreground">{t("One per line as YYYY-MM|index. With the indices, ISTAT is computed per contract anniversary instead of using the yearly figure above.")}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <Button onClick={save} disabled={saving}>{t("Save settings")}</Button>
+        <Button variant="outline" onClick={refresh} disabled={!v.it_foi_url}>{t("Refresh indices from URL")}</Button>
+        {foiMsg && <span className="text-sm text-muted-foreground">{foiMsg}</span>}
+      </div>
     </Card>
   );
 }

@@ -7,7 +7,9 @@ export type Cfg = {
   paymentMethods: string[];
   istatModes: IstatMode[];
   foiVariation: number; // % annual FOI variation, updated by hand in settings
-  imuRatePermille: number; // municipal rate, per mille
+  imuRatePermille: number; // default municipal rate, per mille
+  imuRates: { key: string; permille: number }[]; // per category prefix, longest match wins
+  foiUrl: string; // optional CSV source for monthly FOI indices
 };
 
 export const DEFAULT_CFG_RAW: Record<string, string> = {
@@ -16,6 +18,8 @@ export const DEFAULT_CFG_RAW: Record<string, string> = {
   it_istat_modes: "75%|75\n100%|100\nRinunciata|0",
   it_foi_variation: "0",
   it_imu_rate: "10.6",
+  it_imu_rates: "",
+  it_foi_url: "",
 };
 
 export const parseList = (s: string): string[] =>
@@ -32,6 +36,11 @@ export function parseCfg(raw: Record<string, string>): Cfg {
     }),
     foiVariation: Number(g("it_foi_variation")) || 0,
     imuRatePermille: Number(g("it_imu_rate")) || 0,
+    imuRates: parseList(g("it_imu_rates")).map((l) => {
+      const [key, pm] = l.split("|");
+      return { key: key.toUpperCase().replace(/\s/g, ""), permille: Number(pm) };
+    }).filter((r) => r.key && Number.isFinite(r.permille)),
+    foiUrl: g("it_foi_url").trim(),
   };
 }
 
@@ -74,6 +83,34 @@ export function imuMultiplier(category: string): number | null {
   if (c.startsWith("C/")) return 140;
   if (c.startsWith("D/")) return 65;
   return null;
+}
+
+/** Municipal rate for a category: longest matching prefix in the configured list, else the default. */
+export function imuRateFor(category: string, cfg: Pick<Cfg, "imuRates" | "imuRatePermille">): number {
+  const c = category.toUpperCase().replace(/\s/g, "");
+  const hit = cfg.imuRates.filter((r) => c.startsWith(r.key)).sort((a, b) => b.key.length - a.key.length)[0];
+  return hit ? hit.permille : cfg.imuRatePermille;
+}
+
+/** FOI index series: month 'YYYY-MM' -> value. */
+export type FoiIndex = Record<string, number>;
+
+/** Parse lines like '2026-05|123.4' (also ';' ',' or tab). Extra columns are ignored, last numeric wins. */
+export function parseFoiText(text: string): FoiIndex {
+  const out: FoiIndex = {};
+  for (const line of text.split("\n")) {
+    const m = line.match(/(\d{4}-\d{2})(?:-\d{2})?\D+(\d+(?:[.,]\d+)?)\s*$/);
+    if (m) out[m[1]] = Number(m[2].replace(",", "."));
+  }
+  return out;
+}
+
+/** ISTAT variation for an anniversary: index of the previous month vs the same month a year earlier (%). */
+export function foiVariation(index: FoiIndex, anniversary: string): number | null {
+  const cur = addMonthsIso(`${anniversary.slice(0, 7)}-01`, -1).slice(0, 7);
+  const prev = addMonthsIso(`${cur}-01`, -12).slice(0, 7);
+  if (!index[cur] || !index[prev]) return null;
+  return Math.round((index[cur] / index[prev] - 1) * 10000) / 100;
 }
 
 /** Annual IMU for one unit. `concordato` = 25% reduction (canone concordato, 3+2). */

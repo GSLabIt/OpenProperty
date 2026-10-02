@@ -7,7 +7,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import fs from "node:fs";
 import api from "./index";
-import it from "./it";
+import it, { refreshFoi } from "./it";
 
 const SECRET = process.env.AUTH_SECRET ?? "";
 const EMAIL = process.env.ADMIN_EMAIL ?? "";
@@ -64,3 +64,6 @@ app.get("*", (c) => c.html(fs.readFileSync("./dist/index.html", "utf8"))); // SP
 
 const port = Number(process.env.PORT ?? 3000);
 serve({ fetch: app.fetch, port }, () => console.log(`OpenProperty listening on :${port}`));
+
+// Daily FOI refresh when a source URL is configured; failures are logged, never fatal.
+setInterval(() => refreshFoi().catch((e) => console.error("FOI refresh:", e.message)), 24 * 3600 * 1000);

@@ -10,8 +10,8 @@ import { PageShell } from "@/components/page-shell";
 import { t } from "@/i18n";
 
 interface Deadline { date: string; kind: string; lease_id: number | null; label: string; amount?: number }
-interface IstatItem { lease_id: number; label: string; due: string; monthly_rent: number; pct: number; foi: number; delta: number; new_rent: number }
-interface ImuItem { unit_id: number; label: string; cadastral_category: string; cadastral_income: number; contract_type: string | null; annual: number | null; acconto: number | null; saldo: number | null }
+interface IstatItem { lease_id: number; label: string; due: string; monthly_rent: number; pct: number; foi: number; foi_source: string; delta: number; new_rent: number }
+interface ImuItem { unit_id: number; label: string; cadastral_category: string; cadastral_income: number; contract_type: string | null; rate_permille: number; annual: number | null; acconto: number | null; saldo: number | null }
 
 const KIND: Record<string, string> = {
   registration: "Contract registration",
@@ -95,7 +95,7 @@ function IstatTab() {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {t("Based on the FOI variation set in Settings → Fiscal ({foi}%). Applying updates the lease rent.", { foi: data.foi })}
+        {t("FOI per contract from the monthly indices; * = yearly figure from Settings → Fiscal ({foi}%). Applying updates the lease rent.", { foi: data.foi })}
       </p>
       {data.items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">{t("No ISTAT updates due in the next 60 days.")}</Card>
@@ -116,7 +116,7 @@ function IstatTab() {
                   <TableCell>{formatDate(i.due)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(i.monthly_rent, settings.currency)}</TableCell>
                   <TableCell className="text-right tabular-nums font-medium">
-                    {formatMoney(i.new_rent, settings.currency)} <span className="text-xs text-muted-foreground">(+{i.delta.toFixed(2)})</span>
+                    {formatMoney(i.new_rent, settings.currency)} <span className="text-xs text-muted-foreground">(+{i.delta.toFixed(2)} · FOI {i.foi}%{i.foi_source === "manual" ? "*" : ""})</span>
                   </TableCell>
                   <TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => apply(i)}>{t("Apply")}</Button></TableCell>
                 </TableRow>
@@ -145,6 +145,7 @@ function ImuTab() {
             <TableRow>
               <TableHead>{t("Unit")}</TableHead><TableHead>{t("Category")}</TableHead>
               <TableHead className="text-right">{t("Cadastral income")}</TableHead>
+              <TableHead className="text-right">{t("Rate")}</TableHead>
               <TableHead className="text-right">{t("Advance (16 Jun)")}</TableHead>
               <TableHead className="text-right">{t("Balance (16 Dec)")}</TableHead>
               <TableHead className="text-right">{t("Annual")}</TableHead>
@@ -156,13 +157,14 @@ function ImuTab() {
                 <TableCell>{i.label}</TableCell>
                 <TableCell>{i.cadastral_category}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatMoney(i.cadastral_income, settings.currency)}</TableCell>
+                <TableCell className="text-right tabular-nums">{i.rate_permille}‰</TableCell>
                 <TableCell className="text-right tabular-nums">{i.acconto != null ? formatMoney(i.acconto, settings.currency) : "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{i.saldo != null ? formatMoney(i.saldo, settings.currency) : "—"}</TableCell>
                 <TableCell className="text-right tabular-nums font-medium">{i.annual != null ? formatMoney(i.annual, settings.currency) : t("Unknown category")}</TableCell>
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={5} className="text-right font-medium">{t("Total")}</TableCell>
+              <TableCell colSpan={6} className="text-right font-medium">{t("Total")}</TableCell>
               <TableCell className="text-right tabular-nums font-semibold">{formatMoney(data.total, settings.currency)}</TableCell>
             </TableRow>
           </TableBody>

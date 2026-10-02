@@ -3,11 +3,34 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { get, query, run } from "./db";
 import {
-  addDaysIso, addMonthsIso, imuAnnual, istatNewRent, istatPct, leaseDeadlines, parseCfg,
-  type Deadline, type LeaseFacts,
+  addDaysIso, addMonthsIso, foiVariation, imuAnnual, imuRateFor, istatNewRent, istatPct, leaseDeadlines, parseCfg, parseFoiText,
+  type Deadline, type FoiIndex, type LeaseFacts,
 } from "./it-fiscal";
 
 const app = new Hono();
+
+async function loadFoi(): Promise<FoiIndex> {
+  const rows = await query<{ month: string; value: number }>("SELECT month, value FROM foi_index");
+  return Object.fromEntries(rows.map((r) => [r.month, r.value]));
+}
+
+async function saveFoi(index: FoiIndex): Promise<number> {
+  const entries = Object.entries(index);
+  for (const [month, value] of entries) {
+    await run("INSERT INTO foi_index (month, value) VALUES (?, ?) ON CONFLICT (month) DO UPDATE SET value = excluded.value", [month, value]);
+  }
+  return entries.length;
+}
+
+/** Fetch monthly FOI indices from the configured CSV URL. Returns the number of months stored. */
+export async function refreshFoi(): Promise<number> {
+  const { foiUrl } = await loadCfg();
+  if (!foiUrl) return 0;
+  if (!/^https:\/\//i.test(foiUrl)) throw new Error("FOI URL must be https");
+  const res = await fetch(foiUrl, { signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new Error(`FOI source answered ${res.status}`);
+  return saveFoi(parseFoiText(await res.text()));
+}
 
 async function loadCfg() {
   const rows = await query<{ key: string; value: string }>("SELECT key, value FROM settings WHERE key LIKE 'it_%'");
@@ -16,6 +39,25 @@ async function loadCfg() {
 
 const today = () => new Date().toISOString().slice(0, 10);
 const intParam = (v: string | undefined) => (v && /^\d+$/.test(v) ? parseInt(v, 10) : null);
+
+app.get("/api/it/foi", async (c) => {
+  const index = await loadFoi();
+  return c.json({ index, text: Object.keys(index).sort().map((m) => `${m}|${index[m]}`).join("\n") });
+});
+
+app.put("/api/it/foi", async (c) => {
+  const b = z.object({ text: z.string().max(200_000) }).safeParse(await c.req.json().catch(() => null));
+  if (!b.success) return c.json({ error: "Invalid body" }, 400);
+  return c.json({ stored: await saveFoi(parseFoiText(b.data.text)) });
+});
+
+app.post("/api/it/foi/refresh", async (c) => {
+  try {
+    return c.json({ stored: await refreshFoi() });
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 502);
+  }
+});
 
 app.get("/api/it/config", async (c) => c.json(await loadCfg()));
 
@@ -118,10 +160,10 @@ async function imuRows(year: number) {
   );
   const items = rows.map((r) => {
     const annual = imuAnnual({
-      category: r.cadastral_category, income: r.cadastral_income, ratePermille: cfg.imuRatePermille,
+      category: r.cadastral_category, income: r.cadastral_income, ratePermille: imuRateFor(r.cadastral_category, cfg),
       ownershipPct: r.ownership_pct, concordato: /concordat/i.test(r.contract_type ?? ""),
     });
-    return { ...r, annual, acconto: annual === null ? null : Math.round(annual * 50) / 100, saldo: annual === null ? null : Math.round((annual - Math.round(annual * 50) / 100) * 100) / 100 };
+    return { ...r, rate_permille: imuRateFor(r.cadastral_category, cfg), annual, acconto: annual === null ? null : Math.round(annual * 50) / 100, saldo: annual === null ? null : Math.round((annual - Math.round(annual * 50) / 100) * 100) / 100 };
   });
   return { year, rate_permille: cfg.imuRatePermille, items, total: Math.round(items.reduce((s, i) => s + (i.annual ?? 0), 0) * 100) / 100 };
 }
@@ -149,6 +191,7 @@ app.get("/api/it/deadlines", async (c) => {
 app.get("/api/it/istat", async (c) => {
   const cfg = await loadCfg();
   const horizon = addDaysIso(today(), 60);
+  const index = await loadFoi();
   const items = [];
   for (const f of await query<Facts>(FACTS_SQL)) {
     if (f.status !== "active") continue;
@@ -159,8 +202,11 @@ app.get("/api/it/istat", async (c) => {
     let due = addMonthsIso(anchor, 12);
     while (due < f.start_date) due = addMonthsIso(due, 12);
     if (pct === 0 || due > horizon || due >= f.end_date) continue;
-    const { delta, newRent } = istatNewRent(f.monthly_rent, cfg.foiVariation, pct);
-    items.push({ lease_id: f.lease_id, label: f.label, due, monthly_rent: f.monthly_rent, pct, foi: cfg.foiVariation, delta, new_rent: newRent });
+    // Per-lease variation from the monthly index when available, else the manual yearly figure.
+    const fromIndex = foiVariation(index, due);
+    const foi = fromIndex ?? cfg.foiVariation;
+    const { delta, newRent } = istatNewRent(f.monthly_rent, foi, pct);
+    items.push({ lease_id: f.lease_id, label: f.label, due, monthly_rent: f.monthly_rent, pct, foi, foi_source: fromIndex === null ? "manual" : "index", delta, new_rent: newRent });
   }
   return c.json({ foi: cfg.foiVariation, items: items.sort((a, b) => a.due.localeCompare(b.due)) });
 });

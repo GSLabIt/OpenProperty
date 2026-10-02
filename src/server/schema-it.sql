@@ -19,3 +19,8 @@ CREATE TABLE IF NOT EXISTS unit_it (
   ownership_pct REAL NOT NULL DEFAULT 100,
   imu_exempt INTEGER NOT NULL DEFAULT 0            -- 1 = abitazione principale etc.
 );
+
+CREATE TABLE IF NOT EXISTS foi_index (
+  month TEXT PRIMARY KEY,                          -- 'YYYY-MM'
+  value REAL NOT NULL                              -- ISTAT FOI index (no tobacco)
+);
