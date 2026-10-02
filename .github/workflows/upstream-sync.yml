@@ -1,0 +1,40 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Merge clawnify/OpenProperty and open a PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "upstream-sync"
+          git config user.email "upstream-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/clawnify/OpenProperty.git
+          git fetch upstream master
+          BASE="${{ github.event.repository.default_branch }}"
+          if git merge-base --is-ancestor upstream/master "origin/$BASE"; then
+            echo "Already up to date"; exit 0
+          fi
+          git checkout -B upstream-sync "origin/$BASE"
+          # A conflict still opens the PR, with markers committed, so a human resolves it.
+          git merge upstream/master -m "Merge upstream clawnify/OpenProperty" || {
+            git add -A && git commit -m "Merge upstream clawnify/OpenProperty (conflicts to resolve)"
+          }
+          git push -f origin upstream-sync
+          gh pr list --head upstream-sync --state open --json number -q '.[0].number' | grep -q . \
+            || gh pr create --base "$BASE" --head upstream-sync \
+                 --title "Sync upstream clawnify/OpenProperty" \
+                 --body "Automated weekly merge. Check src/server/db.ts translation rules (toPg) if upstream added new SQL."
