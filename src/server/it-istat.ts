@@ -1,6 +1,6 @@
 // ISTAT SDMX source for the FOI (senza tabacchi) year-on-year variation.
 // ISTAT allows 5 queries/minute per IP and blocks for 1-2 days beyond that: one request per dataflow, spaced out.
-// Key = FREQ.REF_AREA.DATA_TYPE.MEASURE.COICOP: M = monthly, IT = Italy, MEASURE 7 = year-on-year %, 00ST = no tobacco.
+// Key = FREQ.REF_AREA.DATA_TYPE.MEASURE.COICOP: M = monthly, IT = Italy, MEASURE 7 = year-on-year %, 00ST = indice generale senza tabacchi (confirmed against ISTAT).
 // ponytail: ISTAT rebases every ~5 years; when 2031 brings a new base, add its dataflow here.
 export const ISTAT_BASE = "https://esploradati.istat.it/SDMXWS/rest/data";
 
